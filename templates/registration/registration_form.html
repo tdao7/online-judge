@@ -1,110 +1,58 @@
 {% extends "base.html" %}
 
+{% block title %}{{ _("Register Account") }}{% endblock %}
+
 {% block media %}
     {% include "timezone/media-css.html" %}
     {{ form.media.css }}
+    <link rel="stylesheet" href="{{ static('auth-workspace.css') }}">
     <style>
         .sortedm2m-container, .sortedm2m-container p.selector-filter {
-            width: 300px;
+            width: 100% !important;
         }
 
         .sortedm2m-container p.selector-filter input {
-            width: 262px;
+            width: 100% !important;
+            box-sizing: border-box;
         }
 
         ul.sortedm2m {
-            width: 284px;
-            min-height: 100px;
-            max-height: 200px;
-        }
-
-        .sortedm2m-container, .sortedm2m-container p.selector-filter {
-            width: 300px;
-        }
-
-        .sortedm2m-container p.selector-filter input {
-            width: 262px;
-        }
-
-        ul.sortedm2m {
-            width: 284px;
-            min-height: 70px;
-            max-height: 200px;
-            height: 70px
-        }
-
-        .inline-header {
-            float: left;
-            font-size: 1.1em;
-            padding: 4px 8px;
-            padding-left: 0;
-        }
-
-        .block-header {
-            color: #555;
-            font-size: 1.1em;
-            font-weight: 600;
-            padding-bottom: 0.2em;
-            padding-left: 2px;
-            margin-top: 0.75em
-        }
-
-        .fullwidth {
-            display: block;
-            overflow: hidden;
-        }
-
-        .fullwidth input {
-            width: 100%;
-        }
-
-        .fullwidth-error input {
-            width: 100%;
-            border-color: red;
+            width: 100% !important;
+            min-height: 80px;
+            max-height: 180px;
+            box-sizing: border-box;
         }
 
         .form-field-error {
-            color: red;
-        }
-
-        small {
-            font-size: 0.7em;
-            padding-left: 0.6em;
-        }
-
-        #edit-form {
-            border: unset;
-            background: unset;
-        }
-
-        #content-body {
-            text-align: center;
-        }
-
-        #center-float {
-            display: inline-block;
-            text-align: initial;
-            max-width: 100%;
-            width: 450px;
-        }
-
-        ul.errorlist {
-            margin: 0px;
-            text-align: right;
-            list-style: none;
-        }
-
-        .full-textfield {
-            padding-top: 0.5em;
-        }
-
-        .tos-section {
-            display: inline-block;
-            padding-right: 1em;
+            color: #DC2626;
+            font-size: 0.8rem;
+            margin-top: 4px;
         }
 
         .pass-req {
-            padding: 0;
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+            padding: 0.65rem 0.85rem;
+            font-size: 0.8rem;
+            color: #1D4ED8;
+            margin: 6px 0;
+        }
+
+        .pass-req ul {
+            margin: 0;
+            padding-left: 1.25rem;
+        }
+
+        .tos-wrap {
+            font-size: 0.82rem;
+            color: #64748B;
+            margin: 1rem 0;
+        }
+
+        .tos-wrap a {
+            color: #F97316;
+            text-decoration: underline;
         }
     </style>
 {% endblock %}
@@ -132,91 +80,152 @@
 {% endblock %}
 
 {% block body %}
-    <div id="center-float">
-        <form id="edit-form" action="" method="post" class="form-area">
+<div class="auth-page-container" id="auth-register-container">
+    <div class="auth-card card-wide" id="auth-register-card">
+
+        <div class="auth-header">
+            <div class="auth-logo-badge">
+                <i class="fa fa-user-plus"></i>
+            </div>
+            <h1 class="auth-title">{{ _("Create Your Account") }}</h1>
+            <p class="auth-subtitle">{{ _("Join thousands of developers competing and practicing daily") }}</p>
+        </div>
+
+        {% if form.errors %}
+            <div class="auth-alert-error" id="form-errors">
+                <i class="fa fa-exclamation-circle"></i>
+                <p>{{ _("Please correct the errors indicated below.") }}</p>
+            </div>
+        {% endif %}
+
+        <form id="edit-form" action="" method="post" class="auth-form">
             {% csrf_token %}
 
-            <div class="block-header">{{ _('Username') }}</div>
-            <span class="fullwidth{% if form.username.errors %}-error{% endif %}">{{ form.username }}</span>
-            {% if form.username.errors %}
-                <div class="form-field-error">{{ form.username.errors }}</div>
-            {% endif %}
-
-            <div class="block-header">{{ _('Email') }}</div>
-            <span class="fullwidth{% if form.email.errors %}-error{% endif %}">{{ form.email }}</span>
-            {% if form.email.errors %}
-                <div class="form-field-error">{{ form.email.errors }}</div>
-            {% endif %}
-
-            <div class="block-header">{{ _('Password') -}}
-                <small>(<a href="#" class="pass-req-link">?</a>)</small>
+            <div class="form-group">
+                <label for="id_username">{{ _("Username") }}</label>
+                <div class="input-wrap">
+                    <i class="fa fa-user input-icon"></i>
+                    {{ form.username }}
+                </div>
+                {% if form.username.errors %}
+                    <div class="form-field-error">{{ form.username.errors }}</div>
+                {% endif %}
             </div>
-            <div style="display: none" class="pass-req alert alert-info">
-                <ul>
-                    {% for validator in password_validators %}
-                        <li>{{ validator.get_help_text() }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <span class="fullwidth{% if form.password1.errors %}-error{% endif %}">{{ form.password1 }}</span>
-            {% if form.password1.errors %}
-                <div class="form-field-error">{{ form.password1.errors }}</div>
-            {% endif %}
-            <div class="block-header">{{ _('Password') }}<sup style="font-size: 0.7em;padding-left: 0.2em;">2</sup>{# -#}
-                <small>{{ _('(again, for confirmation)') }}</small>
-            </div>
-            <span class="fullwidth{% if form.password2.errors %}-error{% endif %}">{{ form.password2 }}</span>
-            {% if form.password2.errors %}
-                <div class="form-field-error">{{ form.password2.errors }}</div>
-            {% endif %}
 
-            <div class="block-header">{{ _('Timezone') }}<small>{{ _('(select your closest major city)') }}</small></div>
-            <div class="fullwidth">
-                <div>{{ form.timezone }}
-                    <div style="float: right">
-                        {{ _('or') }}
-                        <a id="open-map" href="#" data-featherlight=".map-wrap">{{ _('pick from map') }}</a>
-                    </div>
+            <div class="form-group">
+                <label for="id_email">{{ _("Email Address") }}</label>
+                <div class="input-wrap">
+                    <i class="fa fa-envelope input-icon"></i>
+                    {{ form.email }}
+                </div>
+                {% if form.email.errors %}
+                    <div class="form-field-error">{{ form.email.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_password1">
+                    {{ _("Password") }}
+                    <small style="margin-left: 6px;">(<a href="#" class="pass-req-link" style="color: #F97316;">{{ _("requirements") }}</a>)</small>
+                </label>
+                <div style="display: none;" class="pass-req">
+                    <ul>
+                        {% for validator in password_validators %}
+                            <li>{{ validator.get_help_text() }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="input-wrap">
+                    <i class="fa fa-lock input-icon"></i>
+                    {{ form.password1 }}
+                </div>
+                {% if form.password1.errors %}
+                    <div class="form-field-error">{{ form.password1.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_password2">{{ _("Confirm Password") }}</label>
+                <div class="input-wrap">
+                    <i class="fa fa-check-circle input-icon"></i>
+                    {{ form.password2 }}
+                </div>
+                {% if form.password2.errors %}
+                    <div class="form-field-error">{{ form.password2.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_timezone">
+                    {{ _("Timezone") }}
+                    <small style="float: right;">
+                        <a id="open-map" href="#" data-featherlight=".map-wrap" style="color: #F97316;">{{ _("pick from map") }}</a>
+                    </small>
+                </label>
+                <div class="input-wrap">
+                    <i class="fa fa-globe input-icon"></i>
+                    {{ form.timezone }}
                 </div>
             </div>
 
-            <div class="block-header">{{ _('Default language') }}</div>
-            <span class="fullwidth">{{ form.language }}</span>
+            <div class="form-group">
+                <label for="id_language">{{ _("Preferred Programming Language") }}</label>
+                <div class="input-wrap">
+                    <i class="fa fa-code input-icon"></i>
+                    {{ form.language }}
+                </div>
+            </div>
 
-            <div class="block-header">{{ _('Affiliated organizations') }}</div>
-            {{ form.organizations }}
-            {% if form.organizations.errors %}
-                <div class="form-field-error">{{ form.organizations.errors }}</div>
-            {% endif %}
+            <div class="form-group">
+                <label>{{ _("Affiliated Organizations / Schools") }}</label>
+                {{ form.organizations }}
+                {% if form.organizations.errors %}
+                    <div class="form-field-error">{{ form.organizations.errors }}</div>
+                {% endif %}
+            </div>
 
             {% if form.newsletter %}
-                <div style="padding-top: 0.5em;">{{ form.newsletter }}
-                    <label for="id_newsletter" style="float: unset;"
-                           class="inline-header grayed">{{ _('Notify me about upcoming contests') }}</label>
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; margin-top: 4px;">
+                    {{ form.newsletter }}
+                    <label for="id_newsletter" style="margin: 0; color: #475569; font-weight: 500;">
+                        {{ _("Notify me about upcoming contests and events") }}
+                    </label>
                 </div>
             {% endif %}
 
             {% if form.captcha %}
-                <div style="margin-top: 0.5em">{{ form.captcha }}</div>
-                {% if form.captcha.errors %}
-                    <div class="form-field-error">{{ form.captcha.errors }}</div>
-                {% endif %}
+                <div style="margin-top: 0.5rem;">
+                    {{ form.captcha }}
+                    {% if form.captcha.errors %}
+                        <div class="form-field-error">{{ form.captcha.errors }}</div>
+                    {% endif %}
+                </div>
             {% endif %}
 
-            <hr>
             {% if tos_url %}
-                <span class="tos-section">
+                <div class="tos-wrap">
                     {{ (_('By registering, you agree to our [Terms & Conditions][0].') + '\n\n  [0]: ' + tos_url)|markdown('default', strip_paragraphs=True) }}
-                </span>
+                </div>
             {% endif %}
-            <button style="float:right;" type="submit">{{ _('Register!') }}</button>
-        </form>
-    </div>
 
-    <div class="map-wrap">
-        <div class="map-inset">
-            <div class="map-axis-x"></div>
-            <div class="map-axis-y"></div>
+            <button type="submit" class="btn-auth-submit" id="btn-submit-register">
+                <span>{{ _("Create Account") }}</span>
+                <i class="fa fa-arrow-right"></i>
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <span>{{ _("Already have an account?") }}</span>
+            <a href="{{ url('auth_login') }}">{{ _("Sign In") }}</a>
         </div>
+
     </div>
+</div>
+
+<div class="map-wrap" style="display: none;">
+    <div class="map-inset">
+        <div class="map-axis-x"></div>
+        <div class="map-axis-y"></div>
+    </div>
+</div>
 {% endblock %}

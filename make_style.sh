@@ -53,6 +53,8 @@ build_style() {
         sass_processed/contest-workspace.css \
         sass_processed/rankings-list.css \
         sass_processed/user-profile.css \
+        sass_processed/dashboard.css \
+        sass_processed/auth-workspace.css \
         --verbose --use autoprefixer -d "$TARGET_DIR"
   else
     echo "Copying compiled CSS directly to $TARGET_DIR..."
@@ -69,6 +71,8 @@ build_style() {
        sass_processed/contest-workspace.css \
        sass_processed/rankings-list.css \
        sass_processed/user-profile.css \
+       sass_processed/dashboard.css \
+       sass_processed/auth-workspace.css \
        "$TARGET_DIR/"
   fi
 

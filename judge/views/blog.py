@@ -85,6 +85,18 @@ class PostList(ListView):
             context['open_tickets'] = filter_visible_tickets(tickets, self.request.user)[:10]
         else:
             context['open_tickets'] = []
+
+        # Dashboard additions (Mockup R4)
+        context['recent_submissions'] = (
+            Submission.objects.filter(problem__is_public=True)
+                              .order_by('-id')
+                              .select_related('user__user', 'problem', 'language')[:8]
+        )
+        context['top_contenders'] = (
+            Profile.objects.filter(is_unlisted=False, rating__isnull=False)
+                           .order_by('-rating')
+                           .select_related('user')[:5]
+        )
         return context
 
 

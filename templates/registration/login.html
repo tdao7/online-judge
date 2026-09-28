@@ -1,79 +1,94 @@
 {% extends "base.html" %}
 
+{% block title %}{{ _("Sign In") }}{% endblock %}
+
 {% block media %}
-    <style>
-        h4 {
-            padding-top: 1em;
-        }
-
-        .social {
-            display: inline;
-            font-size: 2.3em;
-            float: none;
-        }
-
-        .google-icon i {
-            color: #DD4B38;
-        }
-
-        .facebook-icon i {
-            color: #133783;
-        }
-
-        .github-icon i {
-            color: black;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ static('auth-workspace.css') }}">
 {% endblock %}
 
 {% block body %}
-    <div class="auth-flow-form">
-        <form action="" method="post" class="form-area">
+<div class="auth-page-container" id="auth-login-container">
+    <div class="auth-card" id="auth-login-card">
+
+        <div class="auth-header">
+            <div class="auth-logo-badge">
+                <i class="fa fa-terminal"></i>
+            </div>
+            <h1 class="auth-title">{{ _("Sign In to VCoder") }}</h1>
+            <p class="auth-subtitle">{{ _("Enter your credentials to access your judge account") }}</p>
+        </div>
+
+        {% if form.errors %}
+            <div class="auth-alert-error" id="form-errors">
+                <i class="fa fa-exclamation-circle"></i>
+                <p>{{ _("Invalid username or password. Please try again.") }}</p>
+            </div>
+        {% endif %}
+
+        <form action="" method="post" class="auth-form" id="login-form">
             {% csrf_token %}
-            {% if form.errors %}
-                <div id="form-errors">
-                    <p class="error">{{ _('Invalid username or password.') }}</p>
+
+            <div class="form-group">
+                <label for="id_username">{{ _("Username") }}</label>
+                <div class="input-wrap">
+                    <i class="fa fa-user input-icon"></i>
+                    {{ form.username }}
                 </div>
-            {% endif %}
-            <table border="0" style="text-align:left">
-                <tr>
-                    <th><i class="fa fa-user fa-fw"></i>
-                    </th>
-                    <td>{{ form.username }}
-                    </td>
-                </tr>
-                <tr>
-                    <th><i class="fa fa-key fa-fw"></i>
-                    </th>
-                    <td>{{ form.password }}
-                    </td>
-                </tr>
-            </table>
-            <hr>
-            <button style="float:right;" type="submit">{{ _('Login!') }}</button>
+            </div>
+
+            <div class="form-group">
+                <label for="id_password">{{ _("Password") }}</label>
+                <div class="input-wrap">
+                    <i class="fa fa-lock input-icon"></i>
+                    {{ form.password }}
+                </div>
+            </div>
+
+            <div class="form-options-row">
+                <div></div>
+                <a href="{{ url('password_reset') }}" class="forgot-link">{{ _("Forgot your password?") }}</a>
+            </div>
+
+            <button type="submit" class="btn-auth-submit" id="btn-submit-login">
+                <span>{{ _("Sign In") }}</span>
+                <i class="fa fa-arrow-right"></i>
+            </button>
+
             <input type="hidden" name="next" value="{{ next }}">
         </form>
-        <a href="{{ url('password_reset') }}">{{ _('Forgot your password?') }}</a>
 
         {% if form.has_google_auth or form.has_facebook_auth or form.has_github_auth %}
-            <h4>{{ _('Or log in with...') }}</h4>
-            <div>
+            <div class="auth-divider">
+                <span>{{ _("Or continue with") }}</span>
+            </div>
+
+            <div class="social-auth-row">
                 {% if form.has_google_auth %}
-                    <a href="{{ url('social:begin', "google-oauth2") }}?next={{ next }}" class="social google-icon">
-                        <i class="fa fa-google-plus-square"></i>
-                    </a>
-                {% endif %}
-                {% if form.has_facebook_auth %}
-                    <a href="{{ url('social:begin', "facebook") }}?next={{ next }}" class="social facebook-icon">
-                        <i class="fa fa-facebook-square"></i>
+                    <a href="{{ url('social:begin', 'google-oauth2') }}?next={{ next }}" class="btn-social btn-google" title="Google">
+                        <i class="fa fa-google"></i>
+                        <span>Google</span>
                     </a>
                 {% endif %}
                 {% if form.has_github_auth %}
-                    <a href="{{ url('social:begin', "github-secure") }}?next={{ next }}" class="social github-icon">
-                        <i class="fa fa-github-square"></i>
+                    <a href="{{ url('social:begin', 'github-secure') }}?next={{ next }}" class="btn-social btn-github" title="GitHub">
+                        <i class="fa fa-github"></i>
+                        <span>GitHub</span>
+                    </a>
+                {% endif %}
+                {% if form.has_facebook_auth %}
+                    <a href="{{ url('social:begin', 'facebook') }}?next={{ next }}" class="btn-social btn-facebook" title="Facebook">
+                        <i class="fa fa-facebook"></i>
+                        <span>Facebook</span>
                     </a>
                 {% endif %}
             </div>
         {% endif %}
+
+        <div class="auth-footer">
+            <span>{{ _("Don't have an account?") }}</span>
+            <a href="{{ url('registration_register') }}">{{ _("Create account") }}</a>
+        </div>
+
     </div>
+</div>
 {% endblock %}

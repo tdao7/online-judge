@@ -1,23 +1,337 @@
-{% extends "blog/list.html" %}
-{% block before_posts %}
-    {% if misc_config.home_page_top %}
-        {{ render_django(misc_config.home_page_top, request=request, user_count=user_count, problem_count=problem_count, submission_count=submission_count, language_count=language_count, perms=perms) }}
-    {% endif %}
+{% extends "base.html" %}
+
+{% block title %}{{ _("Dashboard") }}{% endblock %}
+
+{% block media %}
+    <link rel="stylesheet" href="{{ static('dashboard.css') }}">
+    <link rel="alternate" type="application/atom+xml" href="{{ url('blog_atom') }}" title="Atom Blog Feed">
+    <link rel="alternate" type="application/rss+xml" href="{{ url('blog_rss') }}" title="RSS Blog Feed">
 {% endblock %}
-{% block meta %}
-    {% if misc_config.meta_description %}
-        <meta name="description" content="{{ misc_config['meta_description'] }}">
-    {% endif %}
-    <script type="application/ld+json">
-        {
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "url": "{{ DMOJ_SCHEME }}://{{ site.domain }}/",
-            "potentialAction": {
-                "@type": "SearchAction",
-                "target": "{{ DMOJ_SCHEME }}://{{ site.domain }}/problems/?search={search_term_string}",
-                "query-input": "required name=search_term_string"
-            }
-        }
-    </script>
+
+{% block js_media %}
+    <script src="{{ static('dashboard.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+<div class="dashboard-wrapper" id="dashboard-wrapper">
+
+    <!-- 1. Hero / Welcome Card Banner -->
+    <section class="dashboard-hero-card" id="dashboard-hero-card">
+        <div class="hero-content">
+            <div class="hero-badge-pill">
+                <i class="fa fa-terminal"></i>
+                <span>{{ _("Welcome to VCoder Online Judge") }}</span>
+            </div>
+            <h1 class="hero-title">{{ _("Master Competitive Programming with Precision") }}</h1>
+            <p class="hero-subtitle">
+                {{ _("Train on thousands of algorithmic problems, compete in real-time rated contests, and test your code against a high-performance multi-language judge engine.") }}
+            </p>
+            <div class="hero-actions-row">
+                <a href="{{ url('problem_list') }}" class="btn-hero-primary" id="btn-hero-browse-problems">
+                    <i class="fa fa-code"></i>
+                    <span>{{ _("Browse Problems") }}</span>
+                </a>
+                <a href="{{ url('contest_list') }}" class="btn-hero-secondary" id="btn-hero-contests">
+                    <i class="fa fa-trophy"></i>
+                    <span>{{ _("View Contests") }}</span>
+                </a>
+                <a href="{{ url('user_list') }}" class="btn-hero-secondary" id="btn-hero-rankings">
+                    <i class="fa fa-bar-chart"></i>
+                    <span>{{ _("Global Leaderboard") }}</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Metrics Quick Strip -->
+    <section class="dashboard-metrics-strip" id="dashboard-metrics-strip">
+        <div class="metric-box">
+            <div class="metric-icon-wrap icon-orange">
+                <i class="fa fa-cubes"></i>
+            </div>
+            <div class="metric-details">
+                <span class="metric-val">{{ problem_count() }}</span>
+                <span class="metric-lbl">{{ _("Algorithmic Problems") }}</span>
+            </div>
+        </div>
+
+        <div class="metric-box">
+            <div class="metric-icon-wrap icon-blue">
+                <i class="fa fa-check-circle"></i>
+            </div>
+            <div class="metric-details">
+                <span class="metric-val">{{ submission_count() }}</span>
+                <span class="metric-lbl">{{ _("Judged Submissions") }}</span>
+            </div>
+        </div>
+
+        <div class="metric-box">
+            <div class="metric-icon-wrap icon-green">
+                <i class="fa fa-users"></i>
+            </div>
+            <div class="metric-details">
+                <span class="metric-val">{{ user_count() }}</span>
+                <span class="metric-lbl">{{ _("Active Competitors") }}</span>
+            </div>
+        </div>
+
+        <div class="metric-box">
+            <div class="metric-icon-wrap icon-purple">
+                <i class="fa fa-server"></i>
+            </div>
+            <div class="metric-details">
+                <span class="metric-val">{{ _("Online") }}</span>
+                <span class="metric-lbl">{{ _("Judge Infrastructure") }}</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Two-Column Dashboard Content Layout -->
+    <div class="dashboard-grid-layout" id="dashboard-grid-layout">
+
+        <!-- Left Column: News / Announcements & Live Submissions -->
+        <main class="dashboard-main-col">
+
+            <!-- Announcements Card -->
+            <section class="dashboard-card" id="dashboard-news-card">
+                <div class="card-header-bar">
+                    <div class="header-title-wrap">
+                        <i class="fa fa-bullhorn"></i>
+                        <h2>{{ _("Announcements & News") }}</h2>
+                    </div>
+                    {% if posts and posts.has_other_pages and posts.has_other_pages() %}
+                        <a href="{{ url('blog_list') }}" class="header-link-action">
+                            <span>{{ _("View All") }}</span>
+                            <i class="fa fa-arrow-right"></i>
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="announcements-list">
+                    {% for post in posts %}
+                        <article class="announcement-item">
+                            <div class="announcement-meta">
+                                {% with authors=post.authors.all() %}
+                                    {% if authors %}
+                                        <div class="author-badge">
+                                            <i class="fa fa-user-circle"></i>
+                                            <span>{{ link_users(authors) }}</span>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                                <span class="date-pill">
+                                    <i class="fa fa-calendar-o"></i>
+                                    {{ post.publish_on|date("M d, Y") }}
+                                </span>
+                                <a href="{{ url('blog_post', post.id, post.slug) }}#comments" class="comments-pill">
+                                    <i class="fa fa-comments-o"></i>
+                                    <span>{{ post_comment_counts[post.id] or 0 }}</span>
+                                </a>
+                            </div>
+                            <h3 class="announcement-title">
+                                <a href="{{ url('blog_post', post.id, post.slug) }}">{{ post.title }}</a>
+                            </h3>
+                            <div class="announcement-snippet">
+                                {% cache 86400 'post_summary' post.id %}
+                                    {{ post.summary|default(post.content, true)|markdown('blog', 'svg', lazy_load=True)|reference|str|safe }}
+                                {% endcache %}
+                            </div>
+                            <a href="{{ url('blog_post', post.id, post.slug) }}" class="read-more-link">
+                                {{ _("Continue reading...") }} <i class="fa fa-angle-right"></i>
+                            </a>
+                        </article>
+                    {% else %}
+                        <div style="padding: 2.5rem 1rem; text-align: center; color: #64748B;">
+                            <i class="fa fa-newspaper-o" style="font-size: 2.2rem; margin-bottom: 0.5rem; display: block; opacity: 0.5;"></i>
+                            <p>{{ _("No announcements posted yet. Check back soon!") }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Live Submissions Activity Card -->
+            <section class="dashboard-card" id="dashboard-activity-card">
+                <div class="card-header-bar">
+                    <div class="header-title-wrap">
+                        <i class="fa fa-bolt"></i>
+                        <h2>{{ _("Live Submissions Activity") }}</h2>
+                    </div>
+                    <a href="{{ url('all_submissions') }}" class="header-link-action">
+                        <span>{{ _("All Submissions") }}</span>
+                        <i class="fa fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="table-responsive-wrapper">
+                    <table class="mini-submissions-table" id="mini-submissions-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>{{ _("Problem") }}</th>
+                                <th>{{ _("User") }}</th>
+                                <th>{{ _("Language") }}</th>
+                                <th>{{ _("Result") }}</th>
+                                <th>{{ _("Date") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in recent_submissions %}
+                                <tr>
+                                    <td><strong>#{{ s.id }}</strong></td>
+                                    <td>
+                                        <a href="{{ url('problem_detail', s.problem.code) }}">
+                                            {{ s.problem.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url('user_page', s.user.user.username) }}">
+                                            {{ s.user.user.username }}
+                                        </a>
+                                    </td>
+                                    <td>{{ s.language.name }}</td>
+                                    <td>
+                                        {% if s.result == 'AC' %}
+                                            <span class="badge-verdict v-ac">AC</span>
+                                        {% elif s.result == 'WA' %}
+                                            <span class="badge-verdict v-wa">WA</span>
+                                        {% elif s.result == 'TLE' %}
+                                            <span class="badge-verdict v-tle">TLE</span>
+                                        {% else %}
+                                            <span class="badge-verdict v-other">{{ s.result or 'Judging' }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="color: #64748B; font-size: 0.78rem;">
+                                        {{ s.date|date("H:i, M d") }}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 2rem; color: #64748B;">
+                                        {{ _("No recent submissions recorded yet.") }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Right Column: Sidebar Widgets -->
+        <aside class="dashboard-sidebar-col">
+
+            <!-- Active / Upcoming Contests Widget -->
+            <div class="dashboard-card" id="dashboard-contests-card">
+                <div class="card-header-bar">
+                    <div class="header-title-wrap">
+                        <i class="fa fa-calendar-check-o"></i>
+                        <h3>{{ _("Contests") }}</h3>
+                    </div>
+                    <a href="{{ url('contest_list') }}" class="header-link-action">
+                        <span>{{ _("View All") }}</span>
+                        <i class="fa fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="sidebar-contests-list">
+                    {% for contest in current_contests %}
+                        <div class="sidebar-contest-item">
+                            <h4 class="contest-item-title">
+                                <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
+                            </h4>
+                            <div class="contest-item-meta">
+                                <span class="contest-status-pill status-active">{{ _("Live Now") }}</span>
+                                <span>{{ contest.time_remaining }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    {% for contest in future_contests %}
+                        <div class="sidebar-contest-item">
+                            <h4 class="contest-item-title">
+                                <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
+                            </h4>
+                            <div class="contest-item-meta">
+                                <span class="contest-status-pill status-upcoming">{{ _("Upcoming") }}</span>
+                                <span>{{ contest.start_time|date("M d, H:i") }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    {% if not current_contests and not future_contests %}
+                        <div style="padding: 1.5rem 0.5rem; text-align: center; color: #64748B; font-size: 0.85rem;">
+                            {{ _("No live or upcoming contests right now.") }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Top Competitors Widget -->
+            <div class="dashboard-card" id="dashboard-leaders-card">
+                <div class="card-header-bar">
+                    <div class="header-title-wrap">
+                        <i class="fa fa-trophy"></i>
+                        <h3>{{ _("Top Competitors") }}</h3>
+                    </div>
+                    <a href="{{ url('user_list') }}" class="header-link-action">
+                        <span>{{ _("Leaderboard") }}</span>
+                        <i class="fa fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="sidebar-leaders-list">
+                    {% for prof in top_contenders %}
+                        <div class="sidebar-leader-item">
+                            <div class="leader-rank-badge rank-{{ loop.index }}">
+                                {{ loop.index }}
+                            </div>
+                            <img src="{{ gravatar(prof, 36) }}" class="leader-avatar" alt="{{ prof.user.username }}">
+                            <div class="leader-info">
+                                <a href="{{ url('user_page', prof.user.username) }}" class="leader-username">
+                                    {{ prof.user.username }}
+                                </a>
+                                <span class="leader-rating">{{ _("Rating") }}: <strong>{{ prof.rating }}</strong></span>
+                            </div>
+                            <div class="leader-solved">
+                                <span>{{ prof.problem_count }}</span> <small style="font-size: 0.72rem; color: #64748B;">pts</small>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div style="padding: 1.5rem 0.5rem; text-align: center; color: #64748B; font-size: 0.85rem;">
+                            {{ _("No ranked competitors yet.") }}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Quick Topics & Shortcuts Widget -->
+            <div class="dashboard-card" id="dashboard-topics-card">
+                <div class="card-header-bar">
+                    <div class="header-title-wrap">
+                        <i class="fa fa-tags"></i>
+                        <h3>{{ _("Problem Topics") }}</h3>
+                    </div>
+                </div>
+                <div class="topic-tags-grid">
+                    <a href="{{ url('problem_list') }}?category=dp" class="topic-tag-chip">
+                        <i class="fa fa-code-fork"></i> {{ _("Dynamic Programming") }}
+                    </a>
+                    <a href="{{ url('problem_list') }}?category=graph" class="topic-tag-chip">
+                        <i class="fa fa-share-alt"></i> {{ _("Graph Theory") }}
+                    </a>
+                    <a href="{{ url('problem_list') }}?category=ds" class="topic-tag-chip">
+                        <i class="fa fa-database"></i> {{ _("Data Structures") }}
+                    </a>
+                    <a href="{{ url('problem_list') }}?category=greedy" class="topic-tag-chip">
+                        <i class="fa fa-bolt"></i> {{ _("Greedy Algorithms") }}
+                    </a>
+                    <a href="{{ url('problem_list') }}?category=math" class="topic-tag-chip">
+                        <i class="fa fa-calculator"></i> {{ _("Mathematics") }}
+                    </a>
+                    <a href="{{ url('problem_list') }}?category=string" class="topic-tag-chip">
+                        <i class="fa fa-font"></i> {{ _("Strings & Parsing") }}
+                    </a>
+                </div>
+            </div>
+
+        </aside>
+
+    </div>
+
+</div>
 {% endblock %}
