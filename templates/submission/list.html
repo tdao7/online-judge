@@ -1,4 +1,10 @@
 {% extends "common-content.html" %}
+
+{% block media %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ static('submissions-list.css') }}">
+{% endblock %}
+
 {% block js_media %}
     <script type="text/javascript">
         {% if dynamic_update and last_msg %}
@@ -23,11 +29,12 @@
                 window.show_problem = 0;
             {% endif %}
         {% endif %}
-        window.results_json = {{ results_json }};
+        window.results_json = {{ results_json|default('{}') }};
     </script>
 
     {% compress js %}
         <script type="text/javascript" src="{{ static('event.js') }}"></script>
+        <script type="text/javascript" src="{{ static('submissions-list.js') }}"></script>
         {% if request.user.is_authenticated and perms.judge.rejudge_submission %}
             <script type="text/javascript">
                 window.rejudge_submission = function (id, e) {
@@ -36,110 +43,23 @@
                         $.ajax({
                             url: '{{ url('submission_rejudge') }}',
                             type: "POST",
-                            data: {
-                                id: id
-                            }
+                            data: { id: id }
                         });
                     }
                 };
             </script>
         {% endif %}
 
-        <script src="{{ static('libs/chart.js/Chart.js') }}"></script>
         <script type="text/javascript">
-            $(function () {
-                var info_float = $('.info-float');
-                var container = $('#content-right');
-                if (!featureTest('position', 'sticky')) {
-                    fix_div(info_float, 55);
-                    $(window).resize(function () {
-                        info_float.width(container.width());
-                    });
-                    info_float.width(container.width());
-                }
-
-                function escapeRegExp(string) {
-                    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
-                }
-
-                function idAndTextMatcher(params, data) {
-                    if ($.trim(params.term) === '')
-                        return data;
-                    var regex = new RegExp(escapeRegExp(params.term), 'i');
-                    return data.text.search(regex) >= 0 || data.id.search(regex) >= 0 ? data : null;
-                }
-
-                $('#status').select2({
-                    theme: '{{ DMOJ_SELECT2_THEME }}',
-                    multiple: 1,
-                    placeholder: {{ _('Filter by status...')|htmltojs }},
-                    matcher: idAndTextMatcher,
-                }).css({'visibility': 'visible'});
-
-                $('#language').select2({
-                    theme: '{{ DMOJ_SELECT2_THEME }}',
-                    multiple: 1,
-                    placeholder: {{ _('Filter by language...')|htmltojs }},
-                    matcher: idAndTextMatcher,
-                }).css({'visibility': 'visible'});
-            });
-
-            // Draw the statistics graph.
-            var chart = null;
-            function stats_graph(raw_data) {
-                var colors = {{ results_colors_json }};
-
-                var ctx = $('#status-graph').find('canvas')[0].getContext('2d');
-                var font = $('body').css('font-family');
-                if (chart !== null) {
-                    chart.destroy();
-                }
-                chart = new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        datasets: [{
-                            data: raw_data.categories.map(function(entry) {
-                                return entry.count;
-                            }),
-                            backgroundColor: raw_data.categories.map(function(entry) {
-                                return colors[entry.code];
-                            }),
-                        }],
-                        labels: raw_data.categories.map(function(entry) {
-                            return entry.name;
-                        }),
-                    },
-                    options: {
-                        animation: false,
-                        scaleFontFamily: font,
-                        tooltips: {
-                            titleFontFamily: font,
-                            bodyFontFamily: font,
-                        },
-                        legend: {
-                            display: false,
-                        },
-                    },
-                });
-
-                $('#total-submission-count').text(raw_data.total);
-            }
-
-            $(function () {
-                stats_graph(window.results_json);
-            });
-
             function load_dynamic_update(last_msg) {
-                var _collect = function (e) {
-                    return e.value;
-                };
-                var language_filter = $.map($('select#language option[selected]'), _collect);
-                var status_filter = $.map($('select#status option[selected]'), _collect);
+                var _collect = function (e) { return e.value; };
+                var language_filter = [$('#filter-language').val()].filter(Boolean);
+                var status_filter = [$('#filter-status').val()].filter(Boolean);
 
                 var table = $('#submissions-table');
-                var statistics = $("#statistics-table");
+                var tbody = $('#submissions-tbody');
                 var doing_ajax = false;
-                var first = parseInt(table.find('>div:first-child').attr('id'));
+                var first = parseInt(tbody.find('>tr:first-child').attr('data-submission-id') || '0');
 
                 var update_submission = function (message, force) {
                     if (language_filter.length && 'language' in message &&
@@ -150,63 +70,46 @@
                         return;
 
                     var id = message.id;
-                    var row = table.find('div#' + id);
+                    var row = tbody.find('#submission-' + id);
                     if (row.length < 1) {
-                        if (id < first)
-                            return;
+                        if (id < first) return;
                         first = id;
-                        row = $('<div>', {id: id, 'class': 'submission-row'}).hide().prependTo(table);
-                        if (table.find('>div').length >= {{ paginator.per_page }})
-                            table.find('>div:last-child').slideUp('slow', function () {
+                        row = $('<tr>', {
+                            id: 'submission-' + id,
+                            'class': 'submission-row',
+                            'data-submission-id': id
+                        }).hide().prependTo(tbody);
+
+                        if (tbody.find('>tr').length >= {{ paginator.per_page|default(50) }}) {
+                            tbody.find('>tr:last-child').slideUp('slow', function () {
                                 $(this).remove();
                             });
+                        }
                     }
+
                     if (force || !doing_ajax) {
                         if (!force) doing_ajax = true;
                         $.ajax({
                             url: '{{ url('submission_single_query') }}',
-                            data: {id: id, show_problem: show_problem}
+                            data: { id: id, show_problem: show_problem }
                         }).done(function (data) {
                             var was_shown = row.is(':visible');
                             row.html(data);
-                            register_time(row.find('.time-with-rel'));
+                            if (typeof register_time === 'function') {
+                                register_time(row.find('.time-with-rel'));
+                            }
                             if (!was_shown) {
                                 row.slideDown('slow');
                             }
-                            if (!force)
-                                setTimeout(function () {
-                                    doing_ajax = false;
-                                }, 1000);
+                            if (!force) {
+                                setTimeout(function () { doing_ajax = false; }, 1000);
+                            }
                         }).fail(function () {
                             console.log('Failed to update submission: ' + id);
                             if (!force) doing_ajax = false;
                         });
                     }
                 };
-
-                var stats_outdated = false;
-                var last_stat_update = Date.now();
-                var stats_update_interval = {{ stats_update_interval|default(0) * 1000 }};
-
-                function update_stats() {
-                    if (Date.now() - last_stat_update < stats_update_interval)
-                        return;
-                    $.ajax({
-                        url: '?results'
-                    }).done(function (data) {
-                        last_stat_update = Date.now();
-                        stats_graph(data);
-                    }).fail(function () {
-                        console.log('Failed to update statistics table!' + id);
-                    }).always(function () {
-                        stats_outdated = false;
-                    });
-                }
-
-                $(window).on('dmoj:window-visible', function () {
-                    if (stats_outdated)
-                        update_stats();
-                });
 
                 var $body = $(document.body);
                 var receiver = new EventReceiver(
@@ -222,20 +125,16 @@
                             update_submission(message);
                         } else if (message.type == 'done-submission') {
                             update_submission(message, true);
-
-                            if (!statistics.length) return;
-                            if ($('body').hasClass('window-hidden'))
-                                return stats_outdated = true;
-                            update_stats();
                         }
                     }
                 );
+
                 receiver.onwsclose = function (event) {
                     if (event.code == 1001) {
                         console.log('Navigated away');
                         return;
                     }
-                    console.log('You probably should refresh?');
+                    console.log('Submission stream disconnected.');
                     $('.ws-closed').show().find('a').click(function () {
                         window.location.reload();
                     });
@@ -257,118 +156,374 @@
 {% block title_ruler %}{% endblock %}
 
 {% block title_row %}
-    {% include "submission/submission-list-tabs.html" %}
-{% endblock %}
+    <!-- macOS Catalog Header (Screen 3: 3.png) -->
+    <div class="submissions-header">
+        <div class="submissions-header-main">
+            <h1 class="submissions-heading">{{ _('Submissions') }}</h1>
+            <p class="submissions-subheading">{{ _('View and analyze your submission history on DMOJ.') }}</p>
+        </div>
 
-{% block media %}
-    {% if perms.judge.change_submission and perms.judge.rejudge_submission %}
-        <style>
-            td.sub-prop, col.sub-prop {
-                width: 22%
-            }
-
-            col.sub-info, td.sub-info {
-                width: 78%
-            }
-
-            #status, #language {
-                visibility: hidden;
-            }
-        </style>
-    {% endif %}
-
-    <style>
-        .total {
-            text-align: center;
-            margin-bottom: 0.5em;
-        }
-
-        #status-graph {
-            padding: 1em 0em;
-        }
-
-        #status-graph canvas {
-            display: block;
-            margin: 0 auto;
-        }
-    </style>
+        <!-- Navigation Tabs / Quick Filter Pills -->
+        <div class="submissions-nav-pills">
+            <a href="{{ all_submissions_link }}"
+               class="nav-pill-item{% if tab == 'all_submissions_list' %} active{% endif %}">
+                <i class="fa fa-list"></i> {{ _('All') }}
+            </a>
+            {% if my_submissions_link %}
+                <a href="{{ my_submissions_link }}"
+                   class="nav-pill-item{% if tab == 'my_submissions_tab' %} active{% endif %}">
+                    <i class="fa fa-user"></i> {{ _('Mine') }}
+                </a>
+            {% endif %}
+            {% if best_submissions_link %}
+                <a href="{{ best_submissions_link }}"
+                   class="nav-pill-item{% if tab == 'best_submissions_list' %} active{% endif %}">
+                    <i class="fa fa-bar-chart"></i> {{ _('Best') }}
+                </a>
+            {% endif %}
+            {% if perms.judge.change_submission %}
+                <a href="{{ url('admin:judge_submission_changelist') }}"
+                   class="nav-pill-item btn-admin"
+                   title="{{ _('Admin Submission List') }}">
+                    <i class="fa fa-sliders"></i> {{ _('Admin') }}
+                </a>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}
 
 {% block body %}
-    {% if page_obj.has_other_pages() %}
-        <div class="top-pagination-bar">{% include "list-pages.html" %}</div>
-    {% endif %}
+<div class="submissions-catalog-wrapper" id="submissions-catalog">
 
-    <div id="common-content">
-        <div id="content-right" class="submission">
-            <div class="info-float">
-                <div class="sidebox">
-                    <h3>{{ _('Filter submissions') }} <i class="fa fa-search"></i></h3>
-                    <div class="sidebox-content">
-                        <form id="filter-form" name="form" action="{{ first_page_href }}" method="get">
-                            <div class="filter-form-group">
-                                <label for="status"><i>{{ _('Status') }}</i></label>
-                                <select id="status" name="status" multiple>
-                                    {% for id, name in all_statuses %}
-                                        <option {% if id in selected_statuses %}selected{% endif %}
-                                                value="{{ id }}">{{ name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="filter-form-group">
-                                <label for="language"><i>{{ _('Language') }}</i></label>
-                                <select id="language" name="language" multiple>
-                                    {% for code, name in all_languages %}
-                                        <option {% if code in selected_languages %}selected{% endif %}
-                                                value="{{ code }}">{{ name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="form-submit-group">
-                                <a id="go" onclick="form.submit()" class="button">{{ _('Go') }}</a>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+    <!-- WebSocket Disconnected Banner -->
+    <div class="ws-closed" style="display:none;">
+        <i class="fa fa-exclamation-triangle"></i>
+        <span>{{ _('Connection lost.') }}</span>
+        <a href="javascript:void(0)" onclick="window.location.reload()">{{ _('Refresh to restore live updates.') }}</a>
+    </div>
 
-                <div class="sidebox">
-                    <div id="statistics-table">
-                        <h3>{{ _('Statistics') }} <i class="fa fa-pie-chart"></i></h3>
-                        <div class="sidebox-content">
-                            <div id="status-graph">
-                                <canvas width="230" height="170"></canvas>
-                            </div>
-                            <div class="total">
-                                {{ _('Total:') }} <span id="total-submission-count"></span>
-                            </div>
+    <!-- Multi-Filter Bar (Screen 3: 3.png) -->
+    <form id="submissions-filter-form"
+          action="{{ first_page_base or '.' }}"
+          method="GET"
+          class="submissions-filter-bar">
+
+        <!-- Hidden Filter Inputs for Submission -->
+        <input type="hidden" name="status" id="filter-status" value="{{ selected_statuses|join(',') if selected_statuses else '' }}">
+        <input type="hidden" name="language" id="filter-language" value="{{ selected_languages|join(',') if selected_languages else '' }}">
+        <input type="hidden" name="contest" id="filter-contest" value="{{ selected_contest or '' }}">
+        <input type="hidden" name="date" id="filter-date" value="{{ selected_date or '' }}">
+        <input type="hidden" name="problem" id="filter-problem" value="{{ selected_problem or '' }}">
+
+        <!-- Filter Row 1: Verdict, Language, Contest -->
+        <div class="filter-row filter-row-top">
+            <!-- 1. Verdict Multi-Filter Dropdown -->
+            <div class="filter-group-item" id="filter-item-verdict">
+                <span class="filter-group-label">{{ _('Verdict') }}</span>
+                <div class="filter-dropdown" id="dropdown-verdict">
+                    <button type="button"
+                            class="filter-dropdown-btn{% if selected_statuses %} active{% endif %}"
+                            aria-haspopup="true"
+                            aria-expanded="false">
+                        <span class="dropdown-selected-text">
+                            {% if not selected_statuses %}
+                                {{ _('All Verdicts') }}
+                            {% elif 'AC' in selected_statuses and selected_statuses|length == 1 %}
+                                {{ _('Accepted') }}
+                            {% elif 'WA' in selected_statuses and selected_statuses|length == 1 %}
+                                {{ _('Wrong Answer') }}
+                            {% elif 'TLE' in selected_statuses and selected_statuses|length == 1 %}
+                                {{ _('Time Limit Exceeded') }}
+                            {% elif 'MLE' in selected_statuses and selected_statuses|length == 1 %}
+                                {{ _('Memory Limit Exceeded') }}
+                            {% elif 'OLE' in selected_statuses and selected_statuses|length == 1 %}
+                                {{ _('Output Limit Exceeded') }}
+                            {% elif ('IR' in selected_statuses or 'RTE' in selected_statuses) and selected_statuses|length <= 2 %}
+                                {{ _('Runtime Error') }}
+                            {% elif 'CE' in selected_statuses and selected_statuses|length == 1 %}
+                                {{ _('Compilation Error') }}
+                            {% else %}
+                                {{ _('Verdict: %(count)s selected', count=selected_statuses|length) }}
+                            {% endif %}
+                        </span>
+                        <i class="fa fa-chevron-down chevron-icon"></i>
+                    </button>
+                    <div class="filter-dropdown-menu">
+                        <div class="dropdown-item{% if not selected_statuses %} active{% endif %}"
+                             data-filter="status" data-value="">
+                            {{ _('All Verdicts') }}
+                        </div>
+                        <div class="dropdown-item{% if 'AC' in selected_statuses %} active{% endif %}"
+                             data-filter="status" data-value="AC">
+                            <span class="verdict-dot verdict-ac"></span> {{ _('Accepted') }}
+                        </div>
+                        <div class="dropdown-item{% if 'WA' in selected_statuses %} active{% endif %}"
+                             data-filter="status" data-value="WA">
+                            <span class="verdict-dot verdict-wa"></span> {{ _('Wrong Answer') }}
+                        </div>
+                        <div class="dropdown-item{% if 'TLE' in selected_statuses %} active{% endif %}"
+                             data-filter="status" data-value="TLE">
+                            <span class="verdict-dot verdict-tle"></span> {{ _('Time Limit Exceeded') }}
+                        </div>
+                        <div class="dropdown-item{% if 'MLE' in selected_statuses %} active{% endif %}"
+                             data-filter="status" data-value="MLE">
+                            <span class="verdict-dot verdict-mle"></span> {{ _('Memory Limit Exceeded') }}
+                        </div>
+                        <div class="dropdown-item{% if 'OLE' in selected_statuses %} active{% endif %}"
+                             data-filter="status" data-value="OLE">
+                            <span class="verdict-dot verdict-ole"></span> {{ _('Output Limit Exceeded') }}
+                        </div>
+                        <div class="dropdown-item{% if 'RTE' in selected_statuses or 'IR' in selected_statuses %} active{% endif %}"
+                             data-filter="status" data-value="RTE">
+                            <span class="verdict-dot verdict-rte"></span> {{ _('Runtime Error') }}
+                        </div>
+                        <div class="dropdown-item{% if 'CE' in selected_statuses %} active{% endif %}"
+                             data-filter="status" data-value="CE">
+                            <span class="verdict-dot verdict-ce"></span> {{ _('Compilation Error') }}
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div id="content-left" class="submission">
-            <div class="ws-closed">
-                <a href="javascript:void(0)">{{ _('You were disconnected. Refresh to show latest updates.') }}</a>
-            </div>
-
-            <div id="submissions-table">
-                {% set profile_id = request.profile.id if request.user.is_authenticated else 0 %}
-                {% for submission in submissions %}
-                    <div class="submission-row{% if submission.is_archived %} submission-archived{% endif %}" id="{{ submission.id }}">
-                        {% with problem_name=show_problem and (submission.problem.i18n_name or submission.problem.name) %}
-                            {% include "submission/row.html" %}
-                        {% endwith %}
+            <!-- 2. Language Multi-Filter Dropdown -->
+            <div class="filter-group-item" id="filter-item-language">
+                <span class="filter-group-label">{{ _('Language') }}</span>
+                <div class="filter-dropdown" id="dropdown-language">
+                    <button type="button"
+                            class="filter-dropdown-btn{% if selected_languages %} active{% endif %}"
+                            aria-haspopup="true"
+                            aria-expanded="false">
+                        <span class="dropdown-selected-text">
+                            {% if not selected_languages %}
+                                {{ _('All Languages') }}
+                            {% elif selected_languages|length == 1 %}
+                                {% for code, name in all_languages %}{% if code in selected_languages %}{{ name }}{% endif %}{% endfor %}
+                            {% else %}
+                                {{ _('Language: %(count)s selected', count=selected_languages|length) }}
+                            {% endif %}
+                        </span>
+                        <i class="fa fa-chevron-down chevron-icon"></i>
+                    </button>
+                    <div class="filter-dropdown-menu menu-scrollable">
+                        <div class="dropdown-item{% if not selected_languages %} active{% endif %}"
+                             data-filter="language" data-value="">
+                            {{ _('All Languages') }}
+                        </div>
+                        {% for code, name in all_languages %}
+                            <div class="dropdown-item{% if code in selected_languages %} active{% endif %}"
+                                 data-filter="language" data-value="{{ code }}">
+                                {{ name }}
+                            </div>
+                        {% endfor %}
                     </div>
-                {% endfor %}
+                </div>
+            </div>
+
+            <!-- 3. Contest Multi-Filter Dropdown -->
+            <div class="filter-group-item" id="filter-item-contest">
+                <span class="filter-group-label">{{ _('Contest') }}</span>
+                <div class="filter-dropdown" id="dropdown-contest">
+                    <button type="button"
+                            class="filter-dropdown-btn{% if selected_contest %} active{% endif %}"
+                            aria-haspopup="true"
+                            aria-expanded="false">
+                        <span class="dropdown-selected-text">
+                            {% if not selected_contest %}
+                                {{ _('All Contests') }}
+                            {% else %}
+                                {% for c in all_contests %}{% if c.key == selected_contest %}{{ c.name }}{% endif %}{% endfor %}
+                            {% endif %}
+                        </span>
+                        <i class="fa fa-chevron-down chevron-icon"></i>
+                    </button>
+                    <div class="filter-dropdown-menu menu-scrollable">
+                        <div class="dropdown-item{% if not selected_contest %} active{% endif %}"
+                             data-filter="contest" data-value="">
+                            {{ _('All Contests') }}
+                        </div>
+                        {% for c in all_contests %}
+                            <div class="dropdown-item{% if c.key == selected_contest %} active{% endif %}"
+                                 data-filter="contest" data-value="{{ c.key }}">
+                                {{ c.name }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- Filter Row 2: Date Preset & Problem -->
+        <div class="filter-row filter-row-bottom">
+            <!-- 4. Date Preset Multi-Filter Dropdown -->
+            <div class="filter-group-item" id="filter-item-date">
+                <span class="filter-group-label">{{ _('Date') }}</span>
+                <div class="filter-dropdown" id="dropdown-date">
+                    <button type="button"
+                            class="filter-dropdown-btn{% if selected_date and selected_date != 'all' %} active{% endif %}"
+                            aria-haspopup="true"
+                            aria-expanded="false">
+                        <i class="fa fa-calendar-o filter-icon-prefix"></i>
+                        <span class="dropdown-selected-text">
+                            {% if selected_date == 'today' %}{{ _('Today') }}
+                            {% elif selected_date == '7d' %}{{ _('Last 7 Days') }}
+                            {% elif selected_date == '30d' %}{{ _('Last 30 Days') }}
+                            {% else %}{{ _('Last 30 Days') }}{% endif %}
+                        </span>
+                        <i class="fa fa-chevron-down chevron-icon"></i>
+                    </button>
+                    <div class="filter-dropdown-menu">
+                        <div class="dropdown-item{% if selected_date == 'all' %} active{% endif %}"
+                             data-filter="date" data-value="all">
+                            {{ _('All Time') }}
+                        </div>
+                        <div class="dropdown-item{% if selected_date == 'today' %} active{% endif %}"
+                             data-filter="date" data-value="today">
+                            {{ _('Today') }}
+                        </div>
+                        <div class="dropdown-item{% if selected_date == '7d' %} active{% endif %}"
+                             data-filter="date" data-value="7d">
+                            {{ _('Last 7 Days') }}
+                        </div>
+                        <div class="dropdown-item{% if not selected_date or selected_date == '30d' %} active{% endif %}"
+                             data-filter="date" data-value="30d">
+                            {{ _('Last 30 Days') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Problem Multi-Filter Dropdown -->
+            <div class="filter-group-item" id="filter-item-problem">
+                <span class="filter-group-label">{{ _('Problem') }}</span>
+                <div class="filter-dropdown" id="dropdown-problem">
+                    <button type="button"
+                            class="filter-dropdown-btn{% if selected_problem %} active{% endif %}"
+                            aria-haspopup="true"
+                            aria-expanded="false">
+                        <span class="dropdown-selected-text">
+                            {% if not selected_problem %}
+                                {{ _('All Problems') }}
+                            {% else %}
+                                {% for p in all_problems %}{% if p.code == selected_problem %}{{ p.name }}{% endif %}{% endfor %}
+                            {% endif %}
+                        </span>
+                        <i class="fa fa-chevron-down chevron-icon"></i>
+                    </button>
+                    <div class="filter-dropdown-menu menu-scrollable dropdown-menu-problem">
+                        <div class="dropdown-search-wrap">
+                            <input type="text"
+                                   class="dropdown-search-input"
+                                   id="problem-filter-search"
+                                   placeholder="{{ _('Search problems...') }}"
+                                   autocomplete="off">
+                        </div>
+                        <div class="problem-options-list" id="problem-options-list">
+                            <div class="dropdown-item{% if not selected_problem %} active{% endif %}"
+                                 data-filter="problem" data-value="">
+                                {{ _('All Problems') }}
+                            </div>
+                            {% for p in all_problems %}
+                                <div class="dropdown-item{% if p.code == selected_problem %} active{% endif %}"
+                                     data-filter="problem"
+                                     data-value="{{ p.code }}"
+                                     data-label="{{ p.name }} ({{ p.code }})">
+                                    {{ p.name }} <span class="problem-code-sub">({{ p.code }})</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if selected_statuses or selected_languages or selected_contest or (selected_date and selected_date != '30d') or selected_problem %}
+                <!-- Quick Reset Filters Action -->
+                <a href="{{ first_page_base or '.' }}" class="btn-clear-filters" title="{{ _('Reset all filters') }}">
+                    <i class="fa fa-times-circle"></i> {{ _('Clear Filters') }}
+                </a>
+            {% endif %}
+        </div>
+    </form>
+
+    <!-- Submissions Layout Container: Table + Slide-Out Drawer Pane -->
+    <div class="submissions-page-layout" id="submissions-page-layout">
+        <!-- Main Pane: Submissions Table & Pagination -->
+        <main class="submissions-main-pane" id="submissions-main-pane">
+            <div class="submissions-table-card">
+                <div class="table-responsive">
+                    <table id="submissions-table" class="submissions-table">
+                        <thead>
+                            <tr>
+                                <th class="col-id">{{ _('ID') }}</th>
+                                <th class="col-problem">{{ _('Problem') }}</th>
+                                <th class="col-user">{{ _('User') }}</th>
+                                <th class="col-verdict">{{ _('Verdict') }}</th>
+                                <th class="col-language">{{ _('Language') }}</th>
+                                <th class="col-time">{{ _('Time') }}</th>
+                                <th class="col-memory">{{ _('Memory') }}</th>
+                                <th class="col-points">{{ _('Points') }}</th>
+                                <th class="col-date">{{ _('Submitted At') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="submissions-tbody">
+                            {% set profile_id = request.profile.id if request.user.is_authenticated else 0 %}
+                            {% for submission in submissions %}
+                                <tr class="submission-row{% if submission.is_archived %} submission-archived{% endif %}"
+                                    id="submission-{{ submission.id }}"
+                                    data-submission-id="{{ submission.id }}"
+                                    data-problem-code="{{ submission.problem.code }}"
+                                    data-user="{{ submission.user.user.username }}">
+                                    {% with problem_name=show_problem and (submission.problem.i18n_name or submission.problem.name) %}
+                                        {% include "submission/row.html" %}
+                                    {% endwith %}
+                                </tr>
+                            {% else %}
+                                <tr class="empty-table-row">
+                                    <td colspan="9" class="empty-table-cell">
+                                        <div class="empty-state-wrap">
+                                            <i class="fa fa-inbox empty-state-icon"></i>
+                                            <p class="empty-state-title">{{ _('No submissions found') }}</p>
+                                            <p class="empty-state-subtitle">{{ _('Try adjusting your filters or date range.') }}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Bottom Pagination Bar -->
+            {% if page_obj.has_other_pages() %}
+                <div class="submissions-bottom-pagination">
+                    {% include "list-pages.html" %}
+                </div>
+            {% endif %}
+        </main>
+
+        <!-- Backdrop Overlay for Mobile/Tablet or Modal Mode -->
+        <div class="submission-drawer-backdrop drawer-backdrop" id="submission-drawer-backdrop"></div>
+
+        <!-- Right Pane: Submission Detail Slide-Out Drawer (Screen 3: 3.png) -->
+        <aside class="submissions-drawer-pane" id="submission-detail-drawer" aria-label="{{ _('Submission Details') }}">
+            <div class="drawer-header" id="submission-drawer-header">
+                <span class="drawer-title" id="submission-drawer-title">#48231756</span>
+                <button type="button" class="btn-close-drawer" id="btn-close-drawer" title="{{ _('Close Drawer') }}" aria-label="{{ _('Close') }}">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="drawer-body" id="submission-drawer-body">
+                <!-- Detailed Inspector content (Testcases grid, metrics, code) populated by Explorer 2 / Drawer module -->
+                <div class="drawer-placeholder" id="drawer-placeholder">
+                    <i class="fa fa-spinner fa-spin"></i>
+                    <span>{{ _('Loading submission details...') }}</span>
+                </div>
+            </div>
+        </aside>
     </div>
-    {% if page_obj.has_other_pages() %}
-        <div class="bottom-pagination-bar">{% include "list-pages.html" %}</div>
-    {% endif %}
+
+</div>
 {% endblock %}
 
 {% block bodyend %}
-    {# Don't load MathJax from common-content! #}
+    {# MathJax omitted to preserve lightweight layout #}
 {% endblock %}

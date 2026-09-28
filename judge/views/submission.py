@@ -303,6 +303,19 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 Language.objects.filter(key__in=self.selected_languages).values_list('id', flat=True)))
         if self.selected_statuses:
             queryset = queryset.filter(result__in=self.selected_statuses)
+        if getattr(self, 'selected_contest', None):
+            queryset = queryset.filter(contest_object__key=self.selected_contest)
+        if getattr(self, 'selected_problem', None):
+            queryset = queryset.filter(problem__code=self.selected_problem)
+        if getattr(self, 'selected_date', None) and self.selected_date != 'all':
+            now = timezone.now()
+            if self.selected_date == 'today':
+                start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+                queryset = queryset.filter(date__gte=start_of_day)
+            elif self.selected_date == '7d':
+                queryset = queryset.filter(date__gte=now - timezone.timedelta(days=7))
+            elif self.selected_date == '30d':
+                queryset = queryset.filter(date__gte=now - timezone.timedelta(days=30))
 
         return queryset
 
@@ -343,6 +356,12 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context['all_statuses'] = self.get_searchable_status_codes()
         context['selected_statuses'] = self.selected_statuses
 
+        context['selected_contest'] = getattr(self, 'selected_contest', '')
+        context['selected_date'] = getattr(self, 'selected_date', '')
+        context['selected_problem'] = getattr(self, 'selected_problem', '')
+        context['all_contests'] = Contest.objects.all().order_by('-start_time')[:30]
+        context['all_problems'] = Problem.objects.all().order_by('name')[:50]
+
         context['results_json'] = mark_safe(json.dumps(self.get_result_data()))
         context['results_colors_json'] = mark_safe(json.dumps(settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS))
 
@@ -362,8 +381,12 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         if not request.user.is_authenticated and 'page' in kwargs:
             raise PermissionDenied()
 
-        self.selected_languages = set(request.GET.getlist('language'))
-        self.selected_statuses = set(request.GET.getlist('status'))
+        statuses = request.GET.getlist('status') or request.GET.getlist('verdict')
+        self.selected_statuses = set(s for s in statuses if s)
+        self.selected_languages = set(l for l in request.GET.getlist('language') if l)
+        self.selected_contest = request.GET.get('contest', '').strip()
+        self.selected_date = request.GET.get('date', '').strip()
+        self.selected_problem = request.GET.get('problem', '').strip()
 
         if 'results' in request.GET:
             return JsonResponse(self.get_result_data())
@@ -680,3 +703,110 @@ class UserContestSubmissions(ForceContestMixin, UserProblemSubmissions):
             contest=format_html('<a href="{1}">{0}</a>', self.contest.name,
                                 reverse('contest_view', args=[self.contest.key])),
         ))
+
+
+class SubmissionDrawerAjax(DetailView):
+    model = Submission
+    template_name = 'submission/drawer.html'
+    context_object_name = 'submission'
+
+    def get_queryset(self):
+        return Submission.objects.select_related(
+            'user__user', 'problem', 'language',
+        ).prefetch_related('test_cases')
+
+    def get_object(self, queryset=None):
+        if queryset is None:
+            queryset = self.get_queryset()
+        pk = self.kwargs.get('pk') or self.kwargs.get('submission')
+        if not pk and 'id' in self.request.GET and self.request.GET['id'].isdigit():
+            pk = int(self.request.GET['id'])
+        submission = get_object_or_404(queryset, id=pk)
+        return submission
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if request.GET.get('format') == 'json':
+            sub = self.object
+            testcases = list(sub.test_cases.all())
+            data = {
+                'id': sub.id,
+                'problem_code': sub.problem.code,
+                'problem_name': sub.problem.name,
+                'verdict': sub.result or '---',
+                'is_graded': sub.is_graded,
+                'testcases_passed': sum(1 for c in testcases if c.status == 'AC'),
+                'testcases_total': len(testcases),
+                'time': sub.time,
+                'memory': sub.memory,
+                'points': sub.points,
+            }
+            return JsonResponse(data)
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        submission = self.object
+        user = self.request.user
+
+        can_see_source = submission.can_see_detail(user)
+        context['can_see_source'] = can_see_source
+
+        if can_see_source and hasattr(submission, 'source'):
+            context['raw_source'] = submission.source.source.rstrip('\n')
+            context['highlighted_source'] = highlight_code(submission.source.source, submission.language.pygments)
+        else:
+            context['raw_source'] = ''
+            context['highlighted_source'] = ''
+
+        if submission.time is not None:
+            if submission.time < 1.0:
+                context['display_time'] = f"{int(round(submission.time * 1000))} ms"
+            else:
+                context['display_time'] = f"{submission.time:.2f} s"
+        else:
+            context['display_time'] = '—'
+
+        time_limit = submission.problem.time_limit
+        try:
+            lang_limit = submission.problem.language_limits.get(language=submission.language)
+        except ObjectDoesNotExist:
+            pass
+        else:
+            time_limit = lang_limit.time_limit
+        context['time_limit'] = time_limit
+
+        if submission.memory is not None:
+            if submission.memory >= 1024:
+                context['display_memory'] = f"{submission.memory / 1024:.1f} MB"
+            else:
+                context['display_memory'] = f"{int(round(submission.memory))} KB"
+        else:
+            context['display_memory'] = '—'
+
+        if submission.problem.memory_limit:
+            context['memory_limit_mb'] = f"{int(round(submission.problem.memory_limit / 1024))} MB"
+        else:
+            context['memory_limit_mb'] = '—'
+
+        case_total = submission.case_total or 0.0
+        case_points = submission.case_points or 0.0
+        if case_total > 0:
+            ratio = max(0.0, min(1.0, case_points / case_total))
+        else:
+            ratio = 1.0 if submission.result == 'AC' else 0.0
+
+        context['points_ratio'] = ratio
+        context['svg_dash_offset'] = round(87.96 * (1.0 - ratio), 2)
+
+        testcases = list(submission.test_cases.all().order_by('case'))
+        passed_count = sum(1 for c in testcases if c.status == 'AC')
+        context['testcase_list'] = testcases
+        context['testcases_passed'] = passed_count
+        context['testcases_total'] = len(testcases)
+
+        first_failed = next((c.case for c in testcases if c.status != 'AC'), None)
+        context['first_failed_case'] = first_failed
+        return context
+

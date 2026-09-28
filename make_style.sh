@@ -47,6 +47,8 @@ build_style() {
         sass_processed/style.css \
         sass_processed/problems-list.css \
         sass_processed/problem-workspace.css \
+        sass_processed/submissions-list.css \
+        sass_processed/submission-drawer.css \
         --verbose --use autoprefixer -d "$TARGET_DIR"
   else
     echo "Copying compiled CSS directly to $TARGET_DIR..."
@@ -57,6 +59,8 @@ build_style() {
        sass_processed/style.css \
        sass_processed/problems-list.css \
        sass_processed/problem-workspace.css \
+       sass_processed/submissions-list.css \
+       sass_processed/submission-drawer.css \
        "$TARGET_DIR/"
   fi
 

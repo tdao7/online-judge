@@ -1,95 +1,127 @@
+{# templates/submission/row.html — Screen 3 Submissions Row Partial #}
 {% set can_view, can_edit = submission_layout(submission, profile_id, request.user, completed_problem_ids, editable_problem_ids, tester_problem_ids) %}
-<div class="sub-result {{ submission.result_class }}">
-    <div class="score">
-        {%- if submission.is_graded -%}
-            {%- if submission.status in ('IE', 'CE', 'AB') -%}
-                ---
-            {%- else -%}
-                {{ submission.case_points|floatformat(0) }} / {{ submission.case_total|floatformat(0) }}
-            {%- endif -%}
-        {%- else -%}
-            <i class="fa fa-spinner fa-pulse grading-spinner"></i>
-        {%- endif -%}
+
+<!-- 1. Submission ID -->
+<td class="col-id">
+    <a href="{{ url('submission_status', submission.id) }}"
+       class="sub-id-link"
+       data-submission-id="{{ submission.id }}"
+       title="{{ _('View submission #%(id)s', id=submission.id) }}">
+        #{{ submission.id }}
+    </a>
+</td>
+
+<!-- 2. Problem -->
+<td class="col-problem">
+    <div class="problem-cell-wrap">
+        <a href="{{ url('problem_detail', submission.problem.code) }}"
+           class="sub-problem-link"
+           title="{{ problem_name or (submission.problem.i18n_name or submission.problem.name) }}">
+            {{ problem_name or (submission.problem.i18n_name or submission.problem.name) }}
+        </a>
     </div>
+</td>
 
-    <div class="state">
-        <span title="{{ submission.long_status }}" class="status">{{ submission.short_status }}</span> |
-        <span class="language">{{ submission.language.short_display_name }}</span>
+<!-- 3. User -->
+<td class="col-user">
+    <div class="user-cell-wrap">
+        {{ link_user(submission.user) }}
     </div>
-</div>
+</td>
 
-<div class="sub-main">
-    <div class="sub-info{% if submission.status == 'G' %} sub-info-grading{% endif %}">
-        {% if show_problem %}
-            <div class="name">
-                <a href="{{ url('problem_detail', submission.problem.code) }}">{{ problem_name }}</a>
-            </div>
-        {% endif %}
-        <div>
-            {{ link_user(submission.user) }}
-            <br class="xs-br">
-            <span class="time">{{ relative_time(submission.date) }}</span>
-            {% if not request.in_contest and submission.contest_object_id %}
-                <a href="{{ url('contest_view', submission.contest_object.key) }}"
-                   class="submission-contest">
-                    <i title="{{ submission.contest_object.name }}" class="fa fa-dot-circle-o"></i>
-                </a>
+<!-- 4. Verdict Badge (Pastel Colors matching Mockup 3) -->
+<td class="col-verdict">
+    {% if submission.status in ('QU', 'P', 'G') %}
+        <span class="verdict-badge verdict-grading" title="{{ submission.long_status }}">
+            <i class="fa fa-spinner fa-spin verdict-spinner"></i>
+            <span>{{ _('Grading') if submission.status == 'G' else (_('Queued') if submission.status == 'QU' else _('Processing')) }}</span>
+            {% if submission.status == 'G' and submission.current_testcase > 0 %}
+                <span class="verdict-testcase-num">#{{ submission.current_testcase }}</span>
             {% endif %}
-            {% if submission.is_archived %}
-                <i class="fa fa-archive"></i>
-            {% endif %}
-        </div>
-    </div>
-
-    {% if submission.status == 'G' %}
-        <div class="sub-testcase">
-            {%- if submission.current_testcase > 0 -%}
-                {{ _('Case #%(case)s', case=submission.current_testcase) }}
-            {%- else -%}
-                ...
-            {%- endif -%}
-        </div>
-    {% endif %}
-
-    {% if can_view %}
-        <div class="sub-prop"><div>
-            <a href="{{ url('submission_status', submission.id) }}">
-                <i class="fa fa-eye fa-fw"></i><span class="label">{{ _('view') }}</span>
-            </a>
-            {% if perms.judge.rejudge_submission and can_edit %} ·
-                {% if not submission.is_locked %}
-                    <a href="#" onclick="rejudge_submission({{ submission.id }}, event);return false">
-                        <i class="fa fa-refresh fa-fw"></i><span class="label">{{ _('rejudge') }}</span>
-                    </a>
-                {% else %}
-                    <i class="fa fa-refresh fa-fw grey-icon"></i>
-                    <span class="label grey-label"
-                          title="{{ _('This submission has been locked, and cannot be rejudged.') }}">
-                        {{ _('locked') }}
-                    </span>
-                {% endif %}
-            {% endif %}
-            {% if can_edit %} ·
-                <a href="{{ url('admin:judge_submission_change', submission.id) }}">
-                    <i class="fa fa-cog fa-fw"></i><span class="label">{{ _('admin') }}</span>
-                </a>
-            {% endif %}
-        </div></div>
-    {% endif %}
-</div>
-
-<div class="sub-usage">
-    {% if submission.status in ('QU', 'P', 'G', 'CE', 'IE', 'AB') %}
-        <div class="time">---</div>
-        <div class="memory">---</div>
+        </span>
+    {% elif submission.result == 'AC' %}
+        <span class="verdict-badge verdict-ac" title="{{ _('Accepted') }}">
+            {{ _('Accepted') }}
+        </span>
+    {% elif submission.result == 'WA' %}
+        <span class="verdict-badge verdict-wa" title="{{ _('Wrong Answer') }}">
+            {{ _('Wrong Answer') }}
+        </span>
+    {% elif submission.result == 'TLE' %}
+        <span class="verdict-badge verdict-tle" title="{{ _('Time Limit Exceeded') }}">
+            {{ _('Time Limit Exceeded') }}
+        </span>
+    {% elif submission.result == 'MLE' %}
+        <span class="verdict-badge verdict-mle" title="{{ _('Memory Limit Exceeded') }}">
+            {{ _('Memory Limit Exceeded') }}
+        </span>
+    {% elif submission.result == 'OLE' %}
+        <span class="verdict-badge verdict-ole" title="{{ _('Output Limit Exceeded') }}">
+            {{ _('Output Limit Exceeded') }}
+        </span>
+    {% elif submission.result in ('IR', 'RTE') %}
+        <span class="verdict-badge verdict-rte" title="{{ _('Runtime Error') }}">
+            {{ _('Runtime Error') }}
+        </span>
+    {% elif submission.result == 'CE' or submission.status == 'CE' %}
+        <span class="verdict-badge verdict-ce" title="{{ _('Compilation Error') }}">
+            {{ _('Compilation Error') }}
+        </span>
     {% else %}
-        {% if "TLE" != submission.result %}
-            <div title="{{ submission.time or 0 }}s" class="time">
-                {{ (submission.time or 0)|floatformat(2) }}s
-            </div>
-        {% else %}
-            <div class="time">---</div>
-        {% endif %}
-        <div class="memory">{{ submission.memory|kbdetailformat }}</div>
+        <span class="verdict-badge verdict-other" title="{{ submission.long_status or submission.short_status }}">
+            {{ submission.long_status or submission.short_status }}
+        </span>
     {% endif %}
-</div>
+</td>
+
+<!-- 5. Language -->
+<td class="col-language">
+    <span class="sub-lang-pill" title="{{ submission.language.name }}">
+        {{ submission.language.short_display_name or submission.language.name }}
+    </span>
+</td>
+
+<!-- 6. Execution Time -->
+<td class="col-time">
+    {% if submission.status in ('QU', 'P', 'G', 'CE', 'IE', 'AB') or submission.time is none %}
+        <span class="sub-metric-empty">—</span>
+    {% elif submission.time < 1.0 %}
+        <span class="sub-metric-val">{{ (submission.time * 1000)|floatformat(0) }} ms</span>
+    {% else %}
+        <span class="sub-metric-val">{{ submission.time|floatformat(2) }} s</span>
+    {% endif %}
+</td>
+
+<!-- 7. Memory Usage -->
+<td class="col-memory">
+    {% if submission.status in ('QU', 'P', 'G', 'CE', 'IE', 'AB') or submission.memory is none %}
+        <span class="sub-metric-empty">—</span>
+    {% elif submission.memory < 1024 %}
+        <span class="sub-metric-val">{{ submission.memory|floatformat(1) }} KB</span>
+    {% else %}
+        <span class="sub-metric-val">{{ (submission.memory / 1024)|floatformat(1) }} MB</span>
+    {% endif %}
+</td>
+
+<!-- 8. Points -->
+<td class="col-points">
+    {% if submission.status in ('IE', 'CE', 'AB') %}
+        <span class="sub-points-val sub-points-zero">
+            0 / {{ submission.case_total|floatformat(0) if submission.case_total else (submission.problem.points|floatformat(0) if submission.problem else '0') }}
+        </span>
+    {% elif submission.is_graded %}
+        <span class="sub-points-val{% if submission.case_points == submission.case_total and submission.case_total > 0 %} sub-points-full{% endif %}">
+            <strong>{{ submission.case_points|floatformat(0) }}</strong> / {{ submission.case_total|floatformat(0) if submission.case_total else (submission.problem.points|floatformat(0) if submission.problem else '0') }}
+        </span>
+    {% else %}
+        <i class="fa fa-spinner fa-spin sub-points-spinner" title="{{ _('Grading in progress...') }}"></i>
+    {% endif %}
+</td>
+
+<!-- 9. Submitted At -->
+<td class="col-date">
+    <div class="sub-date-cell" title="{{ submission.date|date('Y-m-d H:i:s') }}">
+        <span class="sub-date-main">{{ submission.date|date("M j, Y") }}</span>
+        <span class="sub-time-sub">{{ submission.date|date("h:i A") }}</span>
+    </div>
+</td>

@@ -1,0 +1,325 @@
+{# Screen 3 Right Slide-out Detail Drawer Template (Mockup docs/3.png) #}
+{# templates/submission/drawer.html #}
+{% if submission %}
+<div class="drawer-inner" id="drawer-inner-{{ submission.id }}" data-submission-id="{{ submission.id }}">
+    <!-- Drawer Header -->
+    <div class="drawer-header">
+        <div class="drawer-header-top">
+            <h2 class="drawer-submission-id" id="drawer-submission-title">
+                <a href="{{ url('submission_status', submission.id) }}" class="submission-id-link" title="{{ _('View full submission page') }}">
+                    #{{ submission.id }}
+                </a>
+            </h2>
+            <button type="button" class="drawer-close-btn" id="drawer-close-btn" aria-label="{{ _('Close drawer') }}" title="{{ _('Close (Esc)') }}">
+                <i class="fa fa-times" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <div class="drawer-problem-info">
+            <h3 class="drawer-problem-title">
+                <a href="{{ url('problem_detail', submission.problem.code) }}" class="problem-link">
+                    {{ submission.problem.translated_name(request.LANGUAGE_CODE) }}
+                </a>
+            </h3>
+            <div class="drawer-problem-meta-row">
+                <span class="source-pill">{{ submission.problem.group.full_name|default('DMOJ') }}</span>
+                <span class="meta-dot">&middot;</span>
+                <div class="drawer-tag-list">
+                    {% for ptype in submission.problem.types.all() %}
+                        <span class="tag-pill tag-{{ ptype.name|lower }}">{{ ptype.full_name|lower }}</span>
+                    {% else %}
+                        <span class="tag-pill tag-math">{{ _('math') }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scrollable Drawer Body -->
+    <div class="drawer-scroll-body">
+        <!-- Verdict Banner Card -->
+        <div class="drawer-verdict-card drawer-verdict-banner verdict-{{ submission.result_class|lower }}{% if not submission.is_graded %} verdict-grading{% endif %}">
+            <div class="verdict-icon-wrap">
+                {% if submission.result == 'AC' %}
+                    <div class="verdict-icon icon-ac">
+                        <svg viewBox="0 0 20 20" fill="currentColor" class="svg-icon">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                {% elif submission.result == 'WA' %}
+                    <div class="verdict-icon icon-wa">
+                        <svg viewBox="0 0 20 20" fill="currentColor" class="svg-icon">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                {% elif submission.result in ('TLE', 'MLE', 'OLE') %}
+                    <div class="verdict-icon icon-warning">
+                        <svg viewBox="0 0 20 20" fill="currentColor" class="svg-icon">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                {% elif submission.result in ('RTE', 'IR') %}
+                    <div class="verdict-icon icon-error">
+                        <svg viewBox="0 0 20 20" fill="currentColor" class="svg-icon">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                {% elif submission.status == 'CE' or submission.result == 'CE' %}
+                    <div class="verdict-icon icon-ce">
+                        <svg viewBox="0 0 20 20" fill="currentColor" class="svg-icon">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                {% else %}
+                    <div class="verdict-icon icon-grading">
+                        <i class="fa fa-spinner fa-pulse fa-fw"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="verdict-text-wrap">
+                <div class="verdict-status-title">
+                    {{ submission.long_status|default(_('Accepted')) }}
+                </div>
+                <div class="verdict-status-subtext">
+                    {% if submission.result == 'AC' %}
+                        {{ _('All test cases passed.') }}
+                    {% elif submission.result == 'WA' %}
+                        {% if first_failed_case %}
+                            {{ _('Wrong answer on test case #%(case)d.', case=first_failed_case) }}
+                        {% else %}
+                            {{ _('Output differed from expected.') }}
+                        {% endif %}
+                    {% elif submission.result == 'TLE' %}
+                        {{ _('Time limit exceeded during execution.') }}
+                    {% elif submission.result == 'MLE' %}
+                        {{ _('Memory limit exceeded during execution.') }}
+                    {% elif submission.result == 'RTE' or submission.result == 'IR' %}
+                        {{ _('Process returned non-zero exit code.') }}
+                    {% elif submission.status == 'CE' or submission.result == 'CE' %}
+                        {{ _('Compilation error occurred.') }}
+                    {% elif not submission.is_graded %}
+                        {% if submission.current_testcase > 0 %}
+                            {{ _('Grading test case #%(case)d...', case=submission.current_testcase) }}
+                        {% else %}
+                            {{ _('Judging in progress...') }}
+                        {% endif %}
+                    {% else %}
+                        {{ submission.error|truncate(60)|default(_('Execution completed.')) }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 2x2 Metric Cards Grid -->
+        <div class="drawer-metrics-grid">
+            <!-- Metric Card 1: Points -->
+            <div class="metric-card metric-points-card">
+                <div class="metric-label">{{ _('Points') }}</div>
+                <div class="metric-value-row">
+                    <span class="metric-value">
+                        {% if submission.is_graded %}
+                            {{ submission.case_points|floatformat(0) }} / {{ submission.case_total|floatformat(0) }}
+                        {% else %}
+                            &mdash; / {{ submission.case_total|floatformat(0) }}
+                        {% endif %}
+                    </span>
+                    <div class="metric-ring-wrap" title="{{ _('%(pct)d%% points granted', pct=(points_ratio * 100)|int) }}">
+                        <svg class="points-svg-ring" viewBox="0 0 36 36" width="36" height="36" aria-hidden="true">
+                            <circle class="ring-bg" cx="18" cy="18" r="14" fill="none" stroke-width="3"></circle>
+                            <circle class="ring-fill ring-{{ submission.result_class|lower }}" cx="18" cy="18" r="14" fill="none" stroke-width="3"
+                                    stroke-dasharray="87.96" stroke-dashoffset="{{ svg_dash_offset }}"
+                                    stroke-linecap="round" transform="rotate(-90 18 18)"></circle>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metric Card 2: Time -->
+            <div class="metric-card metric-time-card">
+                <div class="metric-label">{{ _('Time') }}</div>
+                <div class="metric-value-row">
+                    <span class="metric-value">{{ display_time }}</span>
+                </div>
+                <div class="metric-limit">{{ _('Limit: %(limit)s s', limit=time_limit|floatformat(2)) }}</div>
+            </div>
+
+            <!-- Metric Card 3: Memory -->
+            <div class="metric-card metric-memory-card">
+                <div class="metric-label">{{ _('Memory') }}</div>
+                <div class="metric-value-row">
+                    <span class="metric-value">{{ display_memory }}</span>
+                </div>
+                <div class="metric-limit">{{ _('Limit: %(limit)s', limit=memory_limit_mb) }}</div>
+            </div>
+
+            <!-- Metric Card 4: Language -->
+            <div class="metric-card metric-language-card">
+                <div class="metric-label">{{ _('Language') }}</div>
+                <div class="metric-value-row">
+                    <div class="lang-display-wrap">
+                        <span class="lang-badge-icon lang-icon-{{ submission.language.common_name|lower }}">
+                            <i class="fa fa-code" aria-hidden="true"></i>
+                        </span>
+                        <span class="metric-value lang-name">{{ submission.language.name }}</span>
+                    </div>
+                </div>
+                <div class="metric-limit lang-compiler" title="{{ compiler_version }}">{{ compiler_version }}</div>
+            </div>
+        </div>
+
+        <!-- Test Cases Status Section -->
+        <div class="drawer-testcases-section">
+            <div class="testcases-header">
+                <h4 class="testcases-title">{{ _('Test Cases') }}</h4>
+                <span class="testcases-counter" id="testcases-counter">
+                    {% if submission.is_graded %}
+                        {{ _('%(passed)d / %(total)d passed', passed=testcases_passed, total=testcases_total) }}
+                    {% else %}
+                        {{ _('Grading (%(current)d / %(total)d)...', current=submission.current_testcase, total=testcases_total) }}
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="testcases-grid" id="testcases-grid">
+                {% for case in testcase_list %}
+                    <div class="testcase-item" data-case-id="{{ case.id }}" data-case-number="{{ loop.index }}"
+                         title="{{ _('Case #%(num)d: %(status)s (%(time)s s, %(mem)s)', num=loop.index, status=case.status, time=(case.time|floatformat(3)) if case.time else '---', mem=case.memory|kbdetailformat if case.memory else '---') }}">
+                        <div class="testcase-badge testcase-{{ case.status|lower }}">
+                            {% if case.status == 'AC' %}
+                                <svg viewBox="0 0 20 20" fill="currentColor" class="badge-svg">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            {% elif case.status == 'WA' %}
+                                <svg viewBox="0 0 20 20" fill="currentColor" class="badge-svg">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            {% elif case.status in ('TLE', 'MLE') %}
+                                <svg viewBox="0 0 20 20" fill="currentColor" class="badge-svg">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                                </svg>
+                            {% elif case.status in ('RTE', 'IR') %}
+                                <svg viewBox="0 0 20 20" fill="currentColor" class="badge-svg">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            {% else %}
+                                <span class="badge-text">{{ case.status }}</span>
+                            {% endif %}
+                        </div>
+                        <span class="testcase-num-label">#{{ loop.index }}</span>
+                    </div>
+                {% else %}
+                    {% if not submission.is_graded %}
+                        <div class="testcases-pending-msg">
+                            <i class="fa fa-spinner fa-pulse"></i> {{ _('Awaiting grading testcases...') }}
+                        </div>
+                    {% else %}
+                        <div class="testcases-empty-msg">{{ _('No test cases recorded.') }}</div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Drawer Bottom Tabs Section: Source Code, Compile Log, Execution Log -->
+        <div class="drawer-bottom-tabs" id="drawer-bottom-tabs">
+            <div class="drawer-tabs-nav" role="tablist">
+                <button type="button" class="drawer-tab-btn active" data-tab="source" role="tab" aria-selected="true" aria-controls="pane-source">
+                    {{ _('Source Code') }}
+                </button>
+                <button type="button" class="drawer-tab-btn{% if submission.error %} has-warnings{% endif %}" data-tab="compile" role="tab" aria-selected="false" aria-controls="pane-compile">
+                    {{ _('Compile Log') }}
+                    {% if submission.status == 'CE' %}<span class="tab-badge-error">!</span>{% endif %}
+                </button>
+                <button type="button" class="drawer-tab-btn" data-tab="execution" role="tab" aria-selected="false" aria-controls="pane-execution">
+                    {{ _('Execution Log') }}
+                </button>
+            </div>
+
+            <!-- Tab Panes Container -->
+            <div class="drawer-tab-panes">
+                <!-- Pane 1: Source Code -->
+                <div class="drawer-tab-pane active" id="pane-source" role="tabpanel">
+                    {% if can_see_source %}
+                        <div class="code-viewer-header">
+                            <div class="code-lang-selector">
+                                <span class="code-lang-pill">{{ submission.language.name }}</span>
+                            </div>
+                            <button type="button" class="btn-copy-code" id="btn-copy-code" data-code="{{ raw_source|escape }}" title="{{ _('Copy to clipboard') }}">
+                                <i class="fa fa-clone" aria-hidden="true"></i>
+                                <span class="copy-text">{{ _('Copy') }}</span>
+                            </button>
+                        </div>
+                        <div class="code-viewer-body">
+                            <pre class="code-viewer-pre line-numbers"><code class="language-{{ submission.language.ace|default('cpp') }}">{{ highlighted_source|safe }}</code></pre>
+                        </div>
+                    {% else %}
+                        <div class="drawer-locked-source">
+                            <div class="locked-icon"><i class="fa fa-lock"></i></div>
+                            <div class="locked-title">{{ _('Source code protected') }}</div>
+                            <div class="locked-desc">
+                                {{ _('You must solve %(problem)s to view others’ solutions.', problem=submission.problem.translated_name(request.LANGUAGE_CODE)) }}
+                            </div>
+                            <a href="{{ url('problem_detail', submission.problem.code) }}" class="btn-goto-problem">
+                                {{ _('Solve Problem') }} &rarr;
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Pane 2: Compile Log -->
+                <div class="drawer-tab-pane" id="pane-compile" role="tabpanel" style="display: none;">
+                    {% if submission.error %}
+                        <div class="compile-log-wrap">
+                            <pre class="compile-log-pre">{{ submission.error|ansi2html }}</pre>
+                        </div>
+                    {% else %}
+                        <div class="log-empty-msg">
+                            <i class="fa fa-check-circle text-success"></i> {{ _('Compilation succeeded with no warnings or errors.') }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Pane 3: Execution Log -->
+                <div class="drawer-tab-pane" id="pane-execution" role="tabpanel" style="display: none;">
+                    {% if testcase_list %}
+                        <div class="execution-table-wrap">
+                            <table class="execution-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>{{ _('Status') }}</th>
+                                        <th>{{ _('Time') }}</th>
+                                        <th>{{ _('Memory') }}</th>
+                                        <th>{{ _('Points') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for case in testcase_list %}
+                                        <tr class="exec-row-{{ case.status|lower }}">
+                                            <td class="col-num">#{{ loop.index }}</td>
+                                            <td class="col-status">
+                                                <span class="status-badge badge-{{ case.status|lower }}">{{ case.status }}</span>
+                                                {% if case.feedback %}<span class="case-feedback">{{ case.feedback }}</span>{% endif %}
+                                            </td>
+                                            <td class="col-time">{{ case.time|floatformat(3) if case.time else '---' }} s</td>
+                                            <td class="col-mem">{{ case.memory|kbdetailformat if case.memory else '---' }}</td>
+                                            <td class="col-pts">{{ case.points|floatformat(0) }}/{{ case.total|floatformat(0) }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="log-empty-msg">{{ _('No detailed execution logs available.') }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="drawer-empty-state">
+    <div class="empty-icon"><i class="fa fa-mouse-pointer"></i></div>
+    <div class="empty-title">{{ _('Select a submission') }}</div>
+    <div class="empty-desc">{{ _('Click any row in the submissions table to inspect test cases and source code.') }}</div>
+</div>
+{% endif %}

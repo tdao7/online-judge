@@ -283,6 +283,7 @@ urlpatterns = [
     path('widgets/', include([
         path('rejudge', widgets.rejudge_submission, name='submission_rejudge'),
         path('single_submission', submission.single_submission, name='submission_single_query'),
+        path('submission_drawer', submission.SubmissionDrawerAjax.as_view(), name='submission_drawer_ajax'),
         path('submission_testcases', submission.SubmissionTestCaseQuery.as_view(), name='submission_testcases_query'),
         path('status-table', status.status_table, name='status_table'),
 

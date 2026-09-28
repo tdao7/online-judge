@@ -1,0 +1,184 @@
+{# templates/submission/drawer-code-viewer.html #}
+{# Screen 3: Detail Drawer Bottom Tabs — Source Code, Compile Log, Execution Log #}
+
+<div class="drawer-code-viewer-wrap" id="drawer-bottom-tabs">
+    <!-- Tab Navigation Bar -->
+    <div class="drawer-tab-bar" role="tablist" aria-label="{{ _('Submission inspection tabs') }}">
+        <button type="button" class="drawer-tab-btn active" id="tab-source-btn" data-tab="source" role="tab" aria-selected="true" aria-controls="pane-source">
+            <span class="tab-label">{{ _('Source Code') }}</span>
+        </button>
+        <button type="button" class="drawer-tab-btn{% if submission.error %} has-warnings{% endif %}" id="tab-compile-btn" data-tab="compile" role="tab" aria-selected="false" aria-controls="pane-compile">
+            <span class="tab-label">{{ _('Compile Log') }}</span>
+            {% if submission.status == 'CE' %}
+                <span class="tab-badge-error" title="{{ _('Compilation Error') }}">!</span>
+            {% elif submission.error %}
+                <span class="tab-badge-warning" title="{{ _('Compiler Warnings') }}">&#x26A0;</span>
+            {% endif %}
+        </button>
+        <button type="button" class="drawer-tab-btn" id="tab-execution-btn" data-tab="execution" role="tab" aria-selected="false" aria-controls="pane-execution">
+            <span class="tab-label">{{ _('Execution Log') }}</span>
+            {% if execution_has_errors %}
+                <span class="tab-badge-error" title="{{ _('Execution Error') }}">!</span>
+            {% endif %}
+        </button>
+    </div>
+
+    <!-- Tab Panels Container -->
+    <div class="drawer-tab-panes">
+        <!-- Pane 1: Source Code -->
+        <div class="drawer-tab-pane active" id="pane-source" role="tabpanel" aria-labelledby="tab-source-btn">
+            {% if can_see_source %}
+                <div class="drawer-code-card">
+                    <!-- Code Viewer Top Toolbar -->
+                    <div class="drawer-code-header">
+                        <div class="code-lang-indicator">
+                            <span class="code-lang-pill">
+                                <span class="lang-text">{{ submission.language.name }}</span>
+                                <svg class="caret-down-icon" viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
+                                    <path d="M4.293 6.293a1 1 0 011.414 0L8 8.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"/>
+                                </svg>
+                            </span>
+                        </div>
+                        <button type="button" class="btn-copy-code" id="btn-copy-code" data-code="{{ raw_source|escape }}" title="{{ _('Copy source code to clipboard') }}">
+                            <svg class="copy-icon" viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H4zm0 1h8a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"/>
+                                <path fill-rule="evenodd" d="M6 0h7a2 2 0 012 2v8a1 1 0 01-2 0V2a1 1 0 00-1-1H6a1 1 0 010-2z"/>
+                            </svg>
+                            <span class="copy-text">{{ _('Copy') }}</span>
+                        </button>
+                    </div>
+
+                    <!-- Code Viewer Body: Line Numbers + Syntax Highlighted Content -->
+                    <div class="drawer-code-body">
+                        <div class="code-table-wrap">
+                            <table class="code-viewer-table">
+                                <tbody>
+                                    <tr>
+                                        <td class="code-linenos" aria-hidden="true">
+                                            {% for line in raw_source.split('\n') %}
+                                                <span class="line-number" data-line="{{ loop.index }}">{{ loop.index }}</span>
+                                            {% endfor %}
+                                        </td>
+                                        <td class="code-content">
+                                            <div class="codehilite">
+                                                <pre><code>{{ highlighted_source|safe }}</code></pre>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Locked Source Code Placeholder -->
+                <div class="drawer-locked-source">
+                    <div class="locked-icon">
+                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0110 0v4"/>
+                        </svg>
+                    </div>
+                    <h4 class="locked-title">{{ _('Source Code Protected') }}</h4>
+                    <p class="locked-desc">
+                        {% if not request.user.is_authenticated %}
+                            {{ _('Please log in to view this submission’s source code.') }}
+                        {% else %}
+                            {{ _('You must solve %(problem)s to view other users’ solutions.', problem=submission.problem.translated_name(request.LANGUAGE_CODE)) }}
+                        {% endif %}
+                    </p>
+                    <a href="{{ url('problem_detail', submission.problem.code) }}" class="btn-goto-problem">
+                        {{ _('Solve Problem') }} &rarr;
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Pane 2: Compile Log -->
+        <div class="drawer-tab-panel" id="pane-compile" role="tabpanel" aria-labelledby="tab-compile-btn" style="display: none;">
+            <div class="drawer-log-card">
+                <div class="drawer-log-header">
+                    <div class="log-status-pill">
+                        {% if submission.status == 'CE' %}
+                            <span class="badge-status-error">{{ _('Compilation Failed') }}</span>
+                        {% elif submission.error %}
+                            <span class="badge-status-warning">{{ _('Warnings Detected') }}</span>
+                        {% else %}
+                            <span class="badge-status-success">{{ _('Clean Compilation') }}</span>
+                        {% endif %}
+                    </div>
+                    {% if submission.error %}
+                        <button type="button" class="btn-copy-log" id="btn-copy-compile-log" data-log="{{ submission.error|escape }}" title="{{ _('Copy compile log to clipboard') }}">
+                            <svg class="copy-icon" viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H4zm0 1h8a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"/>
+                                <path fill-rule="evenodd" d="M6 0h7a2 2 0 012 2v8a1 1 0 01-2 0V2a1 1 0 00-1-1H6a1 1 0 010-2z"/>
+                            </svg>
+                            <span class="copy-text">{{ _('Copy Log') }}</span>
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="drawer-log-body">
+                    {% if submission.error %}
+                        <pre class="compile-log-pre"><code>{{ submission.error|ansi2html }}</code></pre>
+                    {% else %}
+                        <div class="log-empty-state">
+                            <svg class="empty-check-icon" viewBox="0 0 20 20" width="24" height="24" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="empty-text">{{ _('Compilation succeeded with no warnings or errors.') }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Pane 3: Execution Log -->
+        <div class="drawer-tab-panel" id="pane-execution" role="tabpanel" aria-labelledby="tab-execution-btn" style="display: none;">
+            <div class="drawer-log-card">
+                <div class="drawer-log-header">
+                    <div class="log-status-pill">
+                        <span class="badge-status-info">{{ _('%(count)d Test Cases Evaluated', count=testcase_list|length) }}</span>
+                    </div>
+                </div>
+                <div class="drawer-log-body">
+                    {% set has_case_output = false %}
+                    {% for case in testcase_list %}
+                        {% if case.output or case.extended_feedback or case.status != 'AC' %}
+                            {% set has_case_output = true %}
+                            <div class="case-log-block case-status-{{ case.status|lower }}">
+                                <div class="case-log-title">
+                                    <span class="case-badge case-{{ case.status|lower }}">{{ case.status }}</span>
+                                    <strong class="case-name">{{ _('Case #%(num)d', num=loop.index) }}</strong>
+                                    <span class="case-meta">({{ case.time|floatformat(3) if case.time else '---' }} s, {{ case.memory|kbdetailformat if case.memory else '---' }})</span>
+                                    {% if case.feedback %}
+                                        <span class="case-feedback-inline">{{ case.feedback }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if case.output %}
+                                    <div class="case-output-section">
+                                        <div class="output-label">{{ _('Output / Stderr:') }}</div>
+                                        <pre class="case-output-pre"><code>{{ case.output }}</code></pre>
+                                    </div>
+                                {% endif %}
+                                {% if case.extended_feedback %}
+                                    <div class="case-feedback-section">
+                                        <div class="output-label">{{ _('Judge Diagnostics:') }}</div>
+                                        <pre class="case-feedback-pre"><code>{{ case.extended_feedback }}</code></pre>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    {% if not has_case_output %}
+                        <div class="log-empty-state">
+                            <svg class="empty-check-icon" viewBox="0 0 20 20" width="24" height="24" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="empty-text">{{ _('All test cases completed cleanly within limits with no runtime errors or stderr.') }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

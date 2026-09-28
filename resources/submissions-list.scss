@@ -1,0 +1,1046 @@
+@use "vars-vcoder" as *;
+
+// ============================================================================
+// VCODER macOS Design System — Screen 3: Submissions Catalog (Mockup 3.png)
+// Multi-Filter Bar, Submissions Table, Pastel Badges, and Active Row Selection
+// ============================================================================
+
+.submissions-catalog-wrapper {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 4px 24px;
+}
+
+// ----------------------------------------------------------------------------
+// 1. macOS Submissions Catalog Header
+// ----------------------------------------------------------------------------
+.submissions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-top: 4px;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  .submissions-header-main {
+    flex: 1;
+    min-width: 260px;
+  }
+
+  .submissions-heading {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-text-main, #111827);
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .submissions-subheading {
+    font-size: 14px;
+    color: var(--color-text-muted, #6B7280);
+    margin: 6px 0 0;
+  }
+
+  // Quick navigation pills (All / Mine / Best / Admin)
+  .submissions-nav-pills {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--color-bg-card-subtle, #F9FAFB);
+    border: 1px solid var(--color-border, #E5E7EB);
+    border-radius: var(--radius-pill, 9999px);
+    padding: 3px;
+
+    .nav-pill-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-pill, 9999px);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-secondary, #4B5563);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      i {
+        font-size: 12px;
+        color: inherit;
+      }
+
+      &:hover {
+        color: var(--color-text-main, #111827);
+      }
+
+      &.active {
+        background: var(--color-bg-app, #FFFFFF);
+        color: var(--color-primary, #F97316);
+        font-weight: 600;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+        i {
+          color: var(--color-primary, #F97316);
+        }
+      }
+
+      &.btn-admin {
+        color: var(--color-text-muted, #6B7280);
+
+        &:hover {
+          color: var(--color-text-main, #111827);
+        }
+      }
+    }
+  }
+}
+
+// WebSocket Disconnected alert
+.ws-closed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  background: var(--color-warning-bg, #FFFBEB);
+  border: 1px solid var(--color-warning-border, #FDE68A);
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-warning-text, #D97706);
+  font-size: 13px;
+
+  a {
+    font-weight: 600;
+    color: inherit;
+    text-decoration: underline;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 2. Multi-Filter Bar (2-Row Layout matching Mockup 3.png)
+// ----------------------------------------------------------------------------
+.submissions-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .filter-group-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .filter-group-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-muted, #6B7280);
+    white-space: nowrap;
+  }
+
+  // Filter Dropdown Component
+  .filter-dropdown {
+    position: relative;
+
+    .filter-dropdown-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 38px;
+      padding: 0 14px;
+      background: var(--color-bg-app, #FFFFFF);
+      border: 1px solid var(--color-border, #E5E7EB);
+      border-radius: var(--radius-md, 8px);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-secondary, #4B5563);
+      cursor: pointer;
+      outline: none;
+      transition: all 0.15s ease;
+      box-sizing: border-box;
+
+      .dropdown-selected-text {
+        color: var(--color-text-main, #111827);
+        font-weight: 500;
+      }
+
+      .filter-icon-prefix {
+        font-size: 13px;
+        color: var(--color-text-subtle, #9CA3AF);
+      }
+
+      .chevron-icon {
+        font-size: 10px;
+        color: var(--color-text-subtle, #9CA3AF);
+        transition: transform 0.2s ease;
+      }
+
+      &:hover {
+        background: var(--color-bg-hover, #F3F4F6);
+        border-color: var(--color-border-strong, #D1D5DB);
+        color: var(--color-text-main, #111827);
+      }
+
+      &.active {
+        border-color: var(--color-primary-border, #FDBA74);
+        background: var(--color-primary-bg, #FFF7ED);
+        color: var(--color-primary, #F97316);
+
+        .dropdown-selected-text {
+          color: var(--color-primary, #F97316);
+          font-weight: 600;
+        }
+
+        .filter-icon-prefix {
+          color: var(--color-primary, #F97316);
+        }
+      }
+    }
+
+    &.open {
+      .filter-dropdown-btn .chevron-icon {
+        transform: rotate(180deg);
+      }
+
+      .filter-dropdown-menu {
+        display: block;
+        animation: dropdownFadeIn 0.15s ease;
+      }
+    }
+
+    .filter-dropdown-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      z-index: 50;
+      min-width: 190px;
+      max-width: 320px;
+      background: var(--color-bg-card, #FFFFFF);
+      border: 1px solid var(--color-border, #E5E7EB);
+      border-radius: var(--radius-md, 8px);
+      box-shadow: var(--shadow-dropdown, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
+      padding: 6px;
+      box-sizing: border-box;
+
+      &.menu-scrollable {
+        max-height: 280px;
+        overflow-y: auto;
+      }
+
+      &.dropdown-menu-problem {
+        min-width: 260px;
+      }
+
+      .dropdown-search-wrap {
+        padding: 4px;
+        margin-bottom: 6px;
+        border-bottom: 1px solid var(--color-border-subtle, #F3F4F6);
+
+        .dropdown-search-input {
+          width: 100%;
+          height: 32px;
+          padding: 0 8px;
+          background: var(--color-bg-input, #F3F4F6);
+          border: 1px solid transparent;
+          border-radius: var(--radius-sm, 6px);
+          font-size: 12px;
+          color: var(--color-text-main, #111827);
+          outline: none;
+          box-sizing: border-box;
+
+          &:focus {
+            background: var(--color-bg-app, #FFFFFF);
+            border-color: var(--color-primary, #F97316);
+          }
+        }
+      }
+
+      .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: var(--radius-sm, 6px);
+        font-size: 13px;
+        color: var(--color-text-secondary, #4B5563);
+        cursor: pointer;
+        transition: all 0.1s ease;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        &:hover {
+          background: var(--color-bg-hover, #F3F4F6);
+          color: var(--color-text-main, #111827);
+        }
+
+        &.active {
+          background: var(--color-primary-bg, #FFF7ED);
+          color: var(--color-primary, #F97316);
+          font-weight: 600;
+        }
+
+        .problem-code-sub {
+          font-size: 11px;
+          color: var(--color-text-muted, #6B7280);
+          margin-left: 4px;
+        }
+
+        // Circular verdict dot
+        .verdict-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          flex-shrink: 0;
+
+          &.verdict-ac { background-color: #10B981; }
+          &.verdict-wa { background-color: #EF4444; }
+          &.verdict-tle, &.verdict-mle, &.verdict-ole { background-color: #F59E0B; }
+          &.verdict-rte { background-color: #8B5CF6; }
+          &.verdict-ce { background-color: #7C3AED; }
+        }
+      }
+    }
+  }
+
+  .btn-clear-filters {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 12px;
+    background: transparent;
+    border: 1px dashed var(--color-border-strong, #D1D5DB);
+    border-radius: var(--radius-md, 8px);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-muted, #6B7280);
+    text-decoration: none;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: var(--color-bg-hover, #F3F4F6);
+      color: var(--color-danger-text, #DC2626);
+      border-color: var(--color-danger-border, #FECACA);
+    }
+  }
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// ----------------------------------------------------------------------------
+// 3. Submissions Layout Container: Table Pane + Inspector Drawer Pane
+// ----------------------------------------------------------------------------
+.submissions-page-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  // Main Left Pane (contains Submissions Table Card)
+  .submissions-main-pane {
+    flex: 1 1 100%;
+    min-width: 0; // Essential for table truncation inside flex
+    transition: flex 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.3s ease;
+  }
+
+  // Slide-Out Drawer Right Pane (Screen 3: 40% Width Drawer)
+  .submissions-drawer-pane {
+    flex: 0 0 0%;
+    max-width: 0;
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
+    background: var(--color-bg-card, #FFFFFF);
+    border: 1px solid var(--color-border, #E5E7EB);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: var(--shadow-drawer, -8px 0 24px -4px rgba(0, 0, 0, 0.1));
+    transition: flex 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+    box-sizing: border-box;
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--color-border, #E5E7EB);
+
+      .drawer-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--color-text-main, #111827);
+        letter-spacing: -0.01em;
+      }
+
+      .btn-close-drawer {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        border-radius: var(--radius-sm, 6px);
+        color: var(--color-text-subtle, #9CA3AF);
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.12s ease;
+
+        &:hover {
+          background: var(--color-bg-hover, #F3F4F6);
+          color: var(--color-text-main, #111827);
+        }
+      }
+    }
+
+    .drawer-body {
+      padding: 20px;
+    }
+
+    .drawer-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 60px 20px;
+      color: var(--color-text-muted, #6B7280);
+      font-size: 14px;
+    }
+  }
+
+  // Active Drawer State (Mockup 3.png split view: 58% Table, 42% Drawer)
+  &.drawer-open {
+    .submissions-main-pane {
+      flex: 1 1 58%;
+      max-width: 60%;
+    }
+
+    .submissions-drawer-pane {
+      flex: 0 0 42%;
+      max-width: 42%;
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 4. Submissions Table Card & 9 Columns
+// ----------------------------------------------------------------------------
+.submissions-table-card {
+  background: var(--color-bg-card, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
+  overflow: hidden;
+
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+  }
+}
+
+.submissions-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+
+  thead tr {
+    background: var(--color-bg-card-subtle, #F9FAFB);
+    border-bottom: 1px solid var(--color-border, #E5E7EB);
+
+    th {
+      padding: 12px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-muted, #6B7280);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+
+      &.col-id { min-width: 85px; text-align: left; }
+      &.col-problem { min-width: 160px; text-align: left; }
+      &.col-user { min-width: 100px; text-align: left; }
+      &.col-verdict { min-width: 140px; text-align: left; }
+      &.col-language { min-width: 85px; text-align: left; }
+      &.col-time { min-width: 75px; text-align: right; }
+      &.col-memory { min-width: 80px; text-align: right; }
+      &.col-points { min-width: 80px; text-align: center; }
+      &.col-date { min-width: 135px; text-align: right; }
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--color-border-subtle, #F3F4F6);
+    transition: background-color 0.12s ease;
+    cursor: pointer;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background: var(--color-bg-hover, #F9FAFB);
+    }
+
+    // ------------------------------------------------------------------------
+    // Active / Selected Row Highlight (Mockup 3: Left Accent Border & Warm Tint)
+    // ------------------------------------------------------------------------
+    &.selected,
+    &.active {
+      background-color: var(--color-bg-active, #FFF7ED) !important;
+      box-shadow: inset 3px 0 0 var(--color-primary-hover, #EA580C);
+
+      td.col-id {
+        border-left: 3px solid var(--color-primary-hover, #EA580C);
+        padding-left: 11px; // Compensate 3px border to avoid text shift
+      }
+    }
+
+    &.submission-archived {
+      opacity: 0.65;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+    td {
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--color-text-secondary, #4B5563);
+      vertical-align: middle;
+
+      // 1. ID Column
+      &.col-id {
+        font-family: var(--font-mono, monospace);
+        font-size: 13px;
+        white-space: nowrap;
+
+        .sub-id-link {
+          color: var(--color-text-secondary, #4B5563);
+          text-decoration: none;
+          font-weight: 500;
+
+          &:hover {
+            color: var(--color-primary, #F97316);
+            text-decoration: underline;
+          }
+        }
+      }
+
+      // 2. Problem Column
+      &.col-problem {
+        .problem-cell-wrap {
+          max-width: 220px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .sub-problem-link {
+          font-weight: 500;
+          color: var(--color-text-main, #111827);
+          text-decoration: none;
+          transition: color 0.12s ease;
+
+          &:hover {
+            color: var(--color-primary, #F97316);
+          }
+        }
+      }
+
+      // 3. User Column
+      &.col-user {
+        white-space: nowrap;
+
+        .user-cell-wrap {
+          font-weight: 500;
+
+          a {
+            color: var(--color-text-main, #111827);
+            text-decoration: none;
+
+            &:hover {
+              color: var(--color-primary, #F97316);
+            }
+          }
+        }
+      }
+
+      // 4. Verdict Column
+      &.col-verdict {
+        white-space: nowrap;
+      }
+
+      // 5. Language Column
+      &.col-language {
+        white-space: nowrap;
+
+        .sub-lang-pill {
+          font-size: 13px;
+          color: var(--color-text-secondary, #4B5563);
+          font-weight: 500;
+        }
+      }
+
+      // 6. Time Column
+      &.col-time {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+
+        .sub-metric-val {
+          color: var(--color-text-secondary, #4B5563);
+          font-size: 13px;
+        }
+
+        .sub-metric-empty {
+          color: var(--color-text-subtle, #9CA3AF);
+        }
+      }
+
+      // 7. Memory Column
+      &.col-memory {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+
+        .sub-metric-val {
+          color: var(--color-text-secondary, #4B5563);
+          font-size: 13px;
+        }
+
+        .sub-metric-empty {
+          color: var(--color-text-subtle, #9CA3AF);
+        }
+      }
+
+      // 8. Points Column
+      &.col-points {
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+
+        .sub-points-val {
+          font-size: 13px;
+          color: var(--color-text-secondary, #4B5563);
+
+          strong {
+            color: var(--color-text-main, #111827);
+          }
+
+          &.sub-points-full strong {
+            color: #059669;
+          }
+
+          &.sub-points-zero {
+            color: var(--color-text-subtle, #9CA3AF);
+          }
+        }
+
+        .sub-points-spinner {
+          color: var(--color-primary, #F97316);
+          font-size: 12px;
+        }
+      }
+
+      // 9. Submitted At Column
+      &.col-date {
+        text-align: right;
+        white-space: nowrap;
+
+        .sub-date-cell {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 1px;
+        }
+
+        .sub-date-main {
+          font-size: 12px;
+          color: var(--color-text-secondary, #4B5563);
+          font-weight: 500;
+        }
+
+        .sub-time-sub {
+          font-size: 11px;
+          color: var(--color-text-subtle, #9CA3AF);
+        }
+      }
+    }
+  }
+
+  // Empty state row
+  .empty-table-cell {
+    padding: 60px 20px;
+    text-align: center;
+
+    .empty-state-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .empty-state-icon {
+      font-size: 36px;
+      color: var(--color-text-subtle, #9CA3AF);
+      margin-bottom: 4px;
+    }
+
+    .empty-state-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text-main, #111827);
+      margin: 0;
+    }
+
+    .empty-state-subtitle {
+      font-size: 13px;
+      color: var(--color-text-muted, #6B7280);
+      margin: 0;
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 5. Pastel Verdict Badges (Exact Color Palette matching Mockup 3.png)
+// ----------------------------------------------------------------------------
+.verdict-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill, 9999px);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-sizing: border-box;
+
+  // Accepted (AC) -> Pastel Green (#DCFCE7 bg, #16A34A text)
+  &.verdict-ac {
+    background-color: #DCFCE7;
+    color: #16A34A;
+  }
+
+  // Wrong Answer (WA) -> Pastel Red (#FEE2E2 bg, #DC2626 text)
+  &.verdict-wa {
+    background-color: #FEE2E2;
+    color: #DC2626;
+  }
+
+  // Time Limit Exceeded (TLE) & Memory Limit (MLE) -> Pastel Amber (#FFEDD5 bg, #D97706 text)
+  &.verdict-tle,
+  &.verdict-mle,
+  &.verdict-ole {
+    background-color: #FFEDD5;
+    color: #D97706;
+  }
+
+  // Runtime Error (RTE / IR) -> Pastel Purple (#F3E8FF bg, #7C3AED text)
+  &.verdict-rte {
+    background-color: #F3E8FF;
+    color: #7C3AED;
+  }
+
+  // Compilation Error (CE) -> Pastel Violet (#F3E8FF bg, #6B21A8 text)
+  &.verdict-ce {
+    background-color: #F3E8FF;
+    color: #6B21A8;
+  }
+
+  // Grading / Queued -> Pastel Sky Blue (#EFF6FF bg, #2563EB text)
+  &.verdict-grading {
+    background-color: #EFF6FF;
+    color: #2563EB;
+
+    .verdict-spinner {
+      font-size: 11px;
+    }
+
+    .verdict-testcase-num {
+      font-weight: 600;
+      font-size: 11px;
+      margin-left: 2px;
+    }
+  }
+
+  // Other (IE, AB, SC) -> Pastel Subtle Neutral
+  &.verdict-other {
+    background-color: var(--color-bg-input, #F3F4F6);
+    color: var(--color-text-secondary, #4B5563);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 6. Submissions Bottom Pagination
+// ----------------------------------------------------------------------------
+.submissions-bottom-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  margin-bottom: 24px;
+
+  .pagination {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      a, span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 34px;
+        padding: 0 8px;
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: var(--radius-md, 8px);
+        text-decoration: none;
+        border: 1px solid var(--color-border, #E5E7EB);
+        background: var(--color-bg-app, #FFFFFF);
+        color: var(--color-text-secondary, #4B5563);
+        transition: all 0.12s ease;
+      }
+
+      a:hover {
+        background: var(--color-bg-hover, #F3F4F6);
+        color: var(--color-text-main, #111827);
+      }
+
+      &.active-page a {
+        background: var(--color-primary, #F97316);
+        border-color: var(--color-primary, #F97316);
+        color: #FFFFFF;
+        font-weight: 600;
+      }
+
+      &.disabled-page span {
+        opacity: 0.35;
+        cursor: not-allowed;
+        background: var(--color-bg-card-subtle, #F9FAFB);
+      }
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 7. Dark Mode Overrides
+// ----------------------------------------------------------------------------
+[data-theme="dark"], body.theme-dark {
+  .submissions-header {
+    .submissions-heading { color: #F4F4F5; }
+    .submissions-subheading { color: #A1A1AA; }
+
+    .submissions-nav-pills {
+      background: #1F1F23;
+      border-color: #3F3F46;
+
+      .nav-pill-item {
+        color: #D4D4D8;
+
+        &.active {
+          background: #27272A;
+          color: var(--color-primary, #F97316);
+        }
+      }
+    }
+  }
+
+  .submissions-filter-bar {
+    .filter-group-label { color: #A1A1AA; }
+
+    .filter-dropdown {
+      .filter-dropdown-btn {
+        background: #27272A;
+        border-color: #3F3F46;
+        color: #D4D4D8;
+
+        .dropdown-selected-text { color: #F4F4F5; }
+
+        &:hover {
+          background: #3F3F46;
+          border-color: #52525B;
+        }
+
+        &.active {
+          background: #382415;
+          border-color: #F97316;
+          color: #F97316;
+          .dropdown-selected-text { color: #F97316; }
+        }
+      }
+
+      .filter-dropdown-menu {
+        background: #27272A;
+        border-color: #3F3F46;
+
+        .dropdown-search-wrap .dropdown-search-input {
+          background: #18181B;
+          color: #F4F4F5;
+        }
+
+        .dropdown-item {
+          color: #D4D4D8;
+
+          &:hover {
+            background: #3F3F46;
+            color: #FFFFFF;
+          }
+
+          &.active {
+            background: #382415;
+            color: #F97316;
+          }
+        }
+      }
+    }
+  }
+
+  .submissions-page-layout {
+    .submissions-drawer-pane {
+      background: #27272A;
+      border-color: #3F3F46;
+
+      .drawer-header {
+        border-color: #3F3F46;
+        .drawer-title { color: #F4F4F5; }
+        .btn-close-drawer:hover { background: #3F3F46; }
+      }
+    }
+  }
+
+  .submissions-table-card {
+    background: #27272A;
+    border-color: #3F3F46;
+  }
+
+  .submissions-table {
+    thead tr {
+      background: #1F1F23;
+      border-color: #3F3F46;
+      th { color: #A1A1AA; }
+    }
+
+    tbody tr {
+      border-color: #3F3F46;
+
+      &:hover { background: #2F2F33; }
+
+      &.selected,
+      &.active {
+        background-color: #382415 !important;
+        box-shadow: inset 3px 0 0 #F97316;
+
+        td.col-id { border-left-color: #F97316; }
+      }
+
+      td {
+        color: #D4D4D8;
+
+        &.col-id .sub-id-link { color: #D4D4D8; }
+        &.col-problem .sub-problem-link { color: #F4F4F5; }
+        &.col-user .user-cell-wrap a { color: #F4F4F5; }
+        &.col-points .sub-points-val strong { color: #F4F4F5; }
+      }
+    }
+  }
+
+  // Dark pastel badges
+  .verdict-badge {
+    &.verdict-ac { background-color: rgba(16, 185, 129, 0.2); color: #34D399; }
+    &.verdict-wa { background-color: rgba(239, 68, 68, 0.2); color: #F87171; }
+    &.verdict-tle, &.verdict-mle, &.verdict-ole { background-color: rgba(245, 158, 11, 0.2); color: #FBBF24; }
+    &.verdict-rte { background-color: rgba(139, 92, 246, 0.2); color: #A78BFA; }
+    &.verdict-ce { background-color: rgba(124, 58, 237, 0.2); color: #C4B5FD; }
+    &.verdict-grading { background-color: rgba(59, 130, 246, 0.2); color: #60A5FA; }
+  }
+
+  .submissions-bottom-pagination .pagination li {
+    a, span {
+      background: #27272A;
+      border-color: #3F3F46;
+      color: #D4D4D8;
+    }
+    a:hover { background: #3F3F46; }
+    &.active-page a { background: #F97316; border-color: #F97316; color: #FFFFFF; }
+    &.disabled-page span { background: #1F1F23; }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 8. Responsive Collapse Rules
+// ----------------------------------------------------------------------------
+@media (max-width: 1024px) {
+  .submissions-page-layout {
+    &.drawer-open {
+      .submissions-main-pane {
+        flex: 1 1 100%;
+        max-width: 100%;
+      }
+
+      .submissions-drawer-pane {
+        position: fixed;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 420px;
+        max-width: 85vw;
+        z-index: 1000;
+        border-radius: 0;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.25);
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .submissions-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .submissions-filter-bar {
+    .filter-row {
+      flex-direction: column;
+      align-items: stretch;
+
+      .filter-group-item {
+        width: 100%;
+        justify-content: space-between;
+
+        .filter-dropdown {
+          flex: 1;
+
+          .filter-dropdown-btn {
+            width: 100%;
+            justify-content: space-between;
+          }
+        }
+      }
+    }
+  }
+}
