@@ -1,0 +1,816 @@
+/* ==========================================================================
+   Screen 5: Live Contest Workspace Stylesheet (Mockup docs/5.png)
+   macOS Floating Window Design System — VCODER Design Tokens
+   ========================================================================== */
+
+.contest-workspace-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 1.25rem;
+    padding-bottom: 2rem;
+
+    /* ----------------------------------------------------------------------
+       1. Top Header Bar
+       ---------------------------------------------------------------------- */
+    .contest-workspace-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+
+        .header-left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+
+            .contest-breadcrumb {
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                font-size: 0.8125rem;
+                color: var(--color-text-muted, #6B7280);
+
+                .crumb-link {
+                    color: var(--color-text-muted, #6B7280);
+                    text-decoration: none;
+                    transition: color 0.15s ease;
+                    &:hover { color: var(--color-primary, #F97316); }
+                }
+
+                .crumb-sep {
+                    font-size: 0.75rem;
+                    color: var(--color-text-muted, #9CA3AF);
+                }
+
+                .crumb-current {
+                    color: var(--color-text-main, #111827);
+                    font-weight: 500;
+                }
+            }
+
+            .contest-title-row {
+                .contest-title {
+                    font-size: 1.625rem;
+                    font-weight: 700;
+                    letter-spacing: -0.025em;
+                    color: var(--color-text-main, #111827);
+                    margin: 0;
+                    line-height: 1.2;
+                }
+            }
+
+            .contest-meta-row {
+                display: flex;
+                align-items: center;
+                gap: 0.875rem;
+                font-size: 0.8125rem;
+                color: var(--color-text-muted, #6B7280);
+                margin-top: 0.15rem;
+
+                .meta-date {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                }
+
+                .contest-status-pill {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    padding: 0.15rem 0.55rem;
+                    border-radius: var(--radius-pill, 9999px);
+                    font-size: 0.75rem;
+                    font-weight: 600;
+
+                    &.pill-live {
+                        background-color: #DCFCE7;
+                        color: #15803D;
+                    }
+
+                    &.pill-upcoming {
+                        background-color: #EFF6FF;
+                        color: #2563EB;
+                    }
+
+                    &.pill-ended {
+                        background-color: var(--color-bg-subtle, #F3F4F6);
+                        color: var(--color-text-muted, #6B7280);
+                    }
+                }
+            }
+        }
+
+        .header-right-cards {
+            display: flex;
+            align-items: stretch;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+
+            .contest-metric-card {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.75rem 1.125rem;
+                background-color: var(--color-bg-app, #FFFFFF);
+                border: 1px solid var(--color-border-subtle, #E5E7EB);
+                border-radius: var(--radius-md, 10px);
+                box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+                min-width: 140px;
+
+                .card-icon-col {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    .timer-icon {
+                        font-size: 1.35rem;
+                        color: var(--color-primary, #F97316);
+                    }
+
+                    &.rank-icon-col {
+                        color: var(--color-text-muted, #9CA3AF);
+                        font-size: 1.25rem;
+                    }
+                }
+
+                .card-data-col {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.15rem;
+
+                    &.full-width { width: 100%; }
+
+                    .card-label {
+                        font-size: 0.6875rem;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                        font-weight: 600;
+                        color: var(--color-text-muted, #6B7280);
+                    }
+
+                    .card-val {
+                        font-size: 1.125rem;
+                        font-weight: 700;
+                        color: var(--color-text-main, #111827);
+                        font-family: var(--font-family-mono, monospace);
+                        line-height: 1.2;
+                    }
+
+                    .score-ratio-row,
+                    .rank-ratio-row {
+                        display: flex;
+                        align-items: baseline;
+                        gap: 0.2rem;
+                        font-size: 1.125rem;
+                        font-weight: 700;
+                        color: var(--color-text-main, #111827);
+                        line-height: 1.2;
+
+                        .score-sep, .rank-sep {
+                            font-size: 0.875rem;
+                            color: var(--color-text-muted, #9CA3AF);
+                            font-weight: 400;
+                        }
+
+                        .score-total, .rank-total {
+                            font-size: 0.875rem;
+                            color: var(--color-text-muted, #6B7280);
+                            font-weight: 500;
+                        }
+                    }
+
+                    .score-progress-track {
+                        width: 100%;
+                        height: 4px;
+                        border-radius: var(--radius-pill, 9999px);
+                        background-color: var(--color-bg-subtle, #F3F4F6);
+                        margin-top: 0.35rem;
+                        overflow: hidden;
+
+                        .score-progress-fill {
+                            height: 100%;
+                            background-color: var(--color-primary, #F97316);
+                            border-radius: var(--radius-pill, 9999px);
+                            transition: width 0.3s ease;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /* ----------------------------------------------------------------------
+       2. Contest Navigation Tabs
+       ---------------------------------------------------------------------- */
+    .contest-nav-tabs {
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid var(--color-border-subtle, #E5E7EB);
+        padding-bottom: 0.25rem;
+
+        .tab-items-group {
+            display: flex;
+            gap: 0.5rem;
+
+            .contest-tab-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: var(--color-text-muted, #6B7280);
+                background: transparent;
+                border: 1px solid transparent;
+                border-radius: var(--radius-md, 8px);
+                text-decoration: none;
+                cursor: pointer;
+                transition: all 0.15s ease;
+
+                &:hover {
+                    color: var(--color-text-main, #111827);
+                    background-color: var(--color-bg-subtle, #F3F4F6);
+                }
+
+                &.active {
+                    color: var(--color-primary, #EA580C);
+                    background-color: var(--color-bg-active, #FFF7ED);
+                    border-color: rgba(249, 115, 22, 0.3);
+                    font-weight: 600;
+                }
+            }
+        }
+    }
+
+    /* ----------------------------------------------------------------------
+       3. Three-Column Contest Split Layout
+       ---------------------------------------------------------------------- */
+    .contest-workspace-main {
+        width: 100%;
+
+        .contest-split-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr 1.15fr;
+            gap: 1.25rem;
+            align-items: stretch;
+
+            @media (max-width: 1200px) {
+                grid-template-columns: 220px 1fr;
+                .contest-editor-pane {
+                    grid-column: 1 / -1;
+                }
+            }
+
+            @media (max-width: 768px) {
+                grid-template-columns: 1fr;
+            }
+        }
+    }
+
+    /* Column 1: Problems Sidebar */
+    .contest-problems-sidebar {
+        background-color: var(--color-bg-app, #FFFFFF);
+        border: 1px solid var(--color-border-subtle, #E5E7EB);
+        border-radius: var(--radius-lg, 12px);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+
+        .problems-sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--color-border-subtle, #E5E7EB);
+            background-color: var(--color-bg-subtle, #FAFAFA);
+
+            .sidebar-title {
+                font-size: 0.8125rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: var(--color-text-muted, #6B7280);
+            }
+
+            .sidebar-count {
+                font-size: 0.75rem;
+                font-weight: 600;
+                padding: 0.1rem 0.45rem;
+                border-radius: var(--radius-pill, 9999px);
+                background-color: var(--color-bg-subtle, #E5E7EB);
+                color: var(--color-text-muted, #4B5563);
+            }
+        }
+
+        .problems-list-stack {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            max-height: 720px;
+
+            .problem-nav-card {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.875rem 1rem;
+                border-bottom: 1px solid var(--color-border-subtle, #F3F4F6);
+                text-decoration: none;
+                transition: background-color 0.15s ease;
+
+                &:hover {
+                    background-color: var(--color-bg-subtle, #F9FAFB);
+                }
+
+                &.active {
+                    background-color: var(--color-bg-active, #FFF7ED);
+                    border-left: 3px solid var(--color-primary, #F97316);
+
+                    .problem-letter-box {
+                        background-color: var(--color-primary, #F97316);
+                        color: #FFFFFF;
+                    }
+
+                    .problem-card-info .problem-card-name {
+                        color: var(--color-primary, #EA580C);
+                        font-weight: 600;
+                    }
+                }
+
+                .problem-letter-box {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: var(--radius-md, 8px);
+                    background-color: var(--color-bg-subtle, #F3F4F6);
+                    color: var(--color-text-main, #374151);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 700;
+                    font-size: 0.875rem;
+                    flex-shrink: 0;
+                    transition: all 0.15s ease;
+                }
+
+                .problem-card-info {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.2rem;
+                    min-width: 0;
+
+                    .problem-card-name {
+                        font-size: 0.875rem;
+                        font-weight: 500;
+                        color: var(--color-text-main, #111827);
+                        margin: 0;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+
+                    .problem-card-badges {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.35rem;
+
+                        .badge-pts {
+                            font-size: 0.6875rem;
+                            color: var(--color-primary, #EA580C);
+                            font-weight: 600;
+                            background-color: #FFEDD5;
+                            padding: 0.05rem 0.35rem;
+                            border-radius: var(--radius-sm, 4px);
+                        }
+
+                        .badge-topic {
+                            font-size: 0.6875rem;
+                            color: var(--color-text-muted, #6B7280);
+                            background-color: var(--color-bg-subtle, #F3F4F6);
+                            padding: 0.05rem 0.35rem;
+                            border-radius: var(--radius-sm, 4px);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /* Column 2: Problem Statement Pane */
+    .contest-statement-pane {
+        background-color: var(--color-bg-app, #FFFFFF);
+        border: 1px solid var(--color-border-subtle, #E5E7EB);
+        border-radius: var(--radius-lg, 12px);
+        box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+        overflow-y: auto;
+        max-height: 780px;
+
+        .statement-card-inner {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.125rem;
+
+            .statement-title-bar {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 1rem;
+
+                .statement-problem-title {
+                    font-size: 1.35rem;
+                    font-weight: 700;
+                    color: var(--color-text-main, #111827);
+                    margin: 0;
+                    line-height: 1.25;
+
+                    .problem-letter-prefix {
+                        color: var(--color-primary, #F97316);
+                        margin-right: 0.25rem;
+                    }
+                }
+
+                .btn-star-bookmark {
+                    background: transparent;
+                    border: none;
+                    color: var(--color-text-muted, #9CA3AF);
+                    font-size: 1.125rem;
+                    cursor: pointer;
+                    padding: 0.25rem;
+                    transition: color 0.15s ease;
+
+                    &:hover { color: #F59E0B; }
+                    &.bookmarked { color: #F59E0B; }
+                }
+            }
+
+            .statement-meta-pills {
+                display: flex;
+                align-items: center;
+                gap: 0.45rem;
+                flex-wrap: wrap;
+
+                .meta-pill {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.3rem;
+                    padding: 0.2rem 0.55rem;
+                    font-size: 0.75rem;
+                    font-weight: 500;
+                    border-radius: var(--radius-pill, 9999px);
+                    background-color: var(--color-bg-subtle, #F3F4F6);
+                    color: var(--color-text-muted, #4B5563);
+
+                    &.pill-points {
+                        background-color: #DCFCE7;
+                        color: #16A34A;
+                        font-weight: 600;
+                    }
+
+                    &.pill-time, &.pill-memory {
+                        background-color: var(--color-bg-subtle, #F3F4F6);
+                    }
+
+                    &.pill-tag {
+                        background-color: #EFF6FF;
+                        color: #2563EB;
+                    }
+                }
+            }
+
+            .statement-body-markdown {
+                font-size: 0.9375rem;
+                line-height: 1.6;
+                color: var(--color-text-main, #374151);
+
+                h3 {
+                    font-size: 1.05rem;
+                    font-weight: 600;
+                    color: var(--color-text-main, #111827);
+                    margin: 1.25rem 0 0.5rem 0;
+                }
+
+                p { margin: 0.5rem 0; }
+
+                pre {
+                    background-color: var(--color-bg-subtle, #F9FAFB);
+                    border: 1px solid var(--color-border-subtle, #E5E7EB);
+                    border-radius: var(--radius-md, 8px);
+                    padding: 0.875rem 1rem;
+                    font-family: var(--font-family-mono, monospace);
+                    font-size: 0.8125rem;
+                    overflow-x: auto;
+                }
+
+                code {
+                    font-family: var(--font-family-mono, monospace);
+                    background-color: var(--color-bg-subtle, #F3F4F6);
+                    padding: 0.15rem 0.35rem;
+                    border-radius: 4px;
+                    font-size: 0.85em;
+                }
+            }
+        }
+    }
+
+    /* Column 3: Coding Workspace & Testcases Console */
+    .contest-editor-pane {
+        background-color: var(--color-bg-app, #FFFFFF);
+        border: 1px solid var(--color-border-subtle, #E5E7EB);
+        border-radius: var(--radius-lg, 12px);
+        box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+
+        /* Toolbar */
+        .editor-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.65rem 1rem;
+            background-color: var(--color-bg-subtle, #FAFAFA);
+            border-bottom: 1px solid var(--color-border-subtle, #E5E7EB);
+            gap: 1rem;
+            flex-wrap: wrap;
+
+            .editor-tools-left {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+
+                .language-select-wrap {
+                    position: relative;
+                    display: inline-flex;
+                    align-items: center;
+
+                    .contest-language-select {
+                        appearance: none;
+                        -webkit-appearance: none;
+                        padding: 0.4rem 2rem 0.4rem 0.75rem;
+                        font-size: 0.8125rem;
+                        font-weight: 500;
+                        border-radius: var(--radius-md, 6px);
+                        border: 1px solid var(--color-border-subtle, #D1D5DB);
+                        background-color: var(--color-bg-app, #FFFFFF);
+                        color: var(--color-text-main, #111827);
+                        cursor: pointer;
+                        outline: none;
+
+                        &:focus {
+                            border-color: var(--color-primary, #F97316);
+                        }
+                    }
+
+                    .select-caret {
+                        position: absolute;
+                        right: 0.65rem;
+                        pointer-events: none;
+                        color: var(--color-text-muted, #6B7280);
+                        font-size: 0.75rem;
+                    }
+                }
+
+                .btn-editor-tool {
+                    padding: 0.4rem 0.6rem;
+                    background: transparent;
+                    border: 1px solid var(--color-border-subtle, #D1D5DB);
+                    border-radius: var(--radius-md, 6px);
+                    color: var(--color-text-muted, #4B5563);
+                    cursor: pointer;
+                    font-size: 0.8125rem;
+                    transition: all 0.15s ease;
+
+                    &:hover {
+                        background-color: var(--color-bg-subtle, #F3F4F6);
+                        color: var(--color-text-main, #111827);
+                    }
+                }
+            }
+
+            .editor-tools-right {
+                .btn-workspace-submit {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.45rem;
+                    padding: 0.45rem 1.15rem;
+                    font-size: 0.875rem;
+                    font-weight: 600;
+                    border-radius: var(--radius-md, 8px);
+                    background-color: var(--color-primary, #F97316);
+                    color: #FFFFFF;
+                    border: none;
+                    cursor: pointer;
+                    box-shadow: 0 2px 6px rgba(249, 115, 22, 0.35);
+                    transition: background-color 0.15s ease, transform 0.1s ease;
+
+                    &:hover {
+                        background-color: var(--color-primary-hover, #EA580C);
+                        transform: translateY(-1px);
+                    }
+
+                    .shortcut-label {
+                        font-size: 0.75rem;
+                        opacity: 0.85;
+                        font-weight: 400;
+                    }
+                }
+            }
+        }
+
+        /* Ace Editor Container */
+        .editor-ace-wrapper {
+            position: relative;
+            flex: 1;
+            min-height: 380px;
+
+            .contest-ace-editor {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                font-family: var(--font-family-mono, monospace);
+                font-size: 0.875rem;
+            }
+        }
+
+        /* Bottom Testcases Console Drawer */
+        .editor-console-drawer {
+            border-top: 1px solid var(--color-border-subtle, #E5E7EB);
+            background-color: var(--color-bg-app, #FFFFFF);
+
+            .console-tabs-bar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0.35rem 0.875rem;
+                background-color: var(--color-bg-subtle, #FAFAFA);
+                border-bottom: 1px solid var(--color-border-subtle, #F3F4F6);
+
+                .console-tabs-left {
+                    display: flex;
+                    gap: 0.35rem;
+
+                    .console-tab-item {
+                        background: transparent;
+                        border: none;
+                        padding: 0.35rem 0.75rem;
+                        font-size: 0.8125rem;
+                        font-weight: 500;
+                        color: var(--color-text-muted, #6B7280);
+                        cursor: pointer;
+                        border-radius: var(--radius-sm, 4px);
+                        transition: all 0.15s ease;
+
+                        &:hover {
+                            color: var(--color-text-main, #111827);
+                        }
+
+                        &.active {
+                            color: var(--color-primary, #EA580C);
+                            font-weight: 600;
+                            background-color: var(--color-bg-active, #FFF7ED);
+                        }
+                    }
+                }
+
+                .console-tabs-right {
+                    .btn-sample-dropdown {
+                        background: transparent;
+                        border: none;
+                        font-size: 0.75rem;
+                        color: var(--color-text-muted, #6B7280);
+                        cursor: pointer;
+                        padding: 0.2rem 0.4rem;
+                        &:hover { color: var(--color-text-main, #111827); }
+                    }
+                }
+            }
+
+            .console-panel {
+                padding: 0.875rem 1rem;
+
+                .sample-test-rows {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.5rem;
+
+                    .sample-test-row {
+                        background-color: var(--color-bg-subtle, #F9FAFB);
+                        border: 1px solid var(--color-border-subtle, #E5E7EB);
+                        border-radius: var(--radius-md, 6px);
+                        padding: 0.5rem 0.875rem;
+
+                        .test-row-header {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+
+                            .test-name {
+                                font-size: 0.8125rem;
+                                font-weight: 600;
+                                color: var(--color-text-main, #111827);
+                                display: flex;
+                                align-items: center;
+                                gap: 0.35rem;
+
+                                i { color: var(--color-text-muted, #9CA3AF); }
+                            }
+
+                            .test-meta-stats {
+                                display: flex;
+                                align-items: center;
+                                gap: 0.65rem;
+                                font-size: 0.75rem;
+                                color: var(--color-text-muted, #6B7280);
+
+                                .test-verdict-badge {
+                                    padding: 0.1rem 0.45rem;
+                                    border-radius: var(--radius-pill, 9999px);
+                                    font-weight: 700;
+                                    font-size: 0.6875rem;
+
+                                    &.verdict-ac {
+                                        background-color: #DCFCE7;
+                                        color: #16A34A;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                .console-empty-state, .console-log-output {
+                    font-size: 0.8125rem;
+                    color: var(--color-text-muted, #6B7280);
+                    margin: 0;
+                    padding: 0.5rem 0;
+                }
+            }
+        }
+    }
+
+    /* ----------------------------------------------------------------------
+       4. Clarifications & Community Discussions Panel
+       ---------------------------------------------------------------------- */
+    .contest-clarifications-panel {
+        background-color: var(--color-bg-app, #FFFFFF);
+        border: 1px solid var(--color-border-subtle, #E5E7EB);
+        border-radius: var(--radius-lg, 12px);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.05));
+
+        .clarifications-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            border-bottom: 1px solid var(--color-border-subtle, #E5E7EB);
+            padding-bottom: 0.75rem;
+
+            h2 {
+                font-size: 1.25rem;
+                font-weight: 600;
+                color: var(--color-text-main, #111827);
+                margin: 0;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+
+                i { color: var(--color-primary, #F97316); }
+            }
+
+            .btn-close-clarifications {
+                background: transparent;
+                border: none;
+                font-size: 1.5rem;
+                line-height: 1;
+                color: var(--color-text-muted, #9CA3AF);
+                cursor: pointer;
+                &:hover { color: var(--color-danger, #EF4444); }
+            }
+        }
+
+        .clarifications-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+
+            .contest-rules-summary {
+                h3 {
+                    font-size: 1rem;
+                    font-weight: 600;
+                    color: var(--color-text-main, #111827);
+                    margin: 0 0 0.5rem 0;
+                }
+                p {
+                    font-size: 0.875rem;
+                    color: var(--color-text-main, #4B5563);
+                    line-height: 1.5;
+                }
+            }
+        }
+    }
+}

@@ -34,7 +34,7 @@ from judge import event_poster as event
 from judge.comments import CommentedDetailView
 from judge.forms import ContestCloneForm
 from judge.models import Contest, ContestMoss, ContestParticipation, ContestProblem, ContestTag, \
-    Problem, Profile, Submission
+    Language, Problem, Profile, Submission
 from judge.tasks import run_moss
 from judge.utils.celery import redirect_to_task_status
 from judge.utils.opengraph import generate_opengraph
@@ -148,8 +148,17 @@ class ContestList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ContestL
         context['finished_contests'] = finished
         context['now'] = self._now
         context['first_page_href'] = '.'
-        context['page_suffix'] = '#past-contests'
-        context['search_query'] = self.search_query
+        # Featured contest: first in present, or first in future, or first in object_list
+        featured = None
+        if present:
+            featured = present[0]
+        elif future:
+            featured = future[0]
+        elif context.get('object_list'):
+            featured = context['object_list'][0]
+        context['featured_contest'] = featured
+        context['top_contestants'] = Profile.objects.filter(rating__isnull=False).select_related('user').order_by('-rating')[:5]
+
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
         return context
@@ -311,6 +320,55 @@ class ContestDetail(ContestMixin, TitleMixin, CommentedDetailView):
         )
         context['enable_comments'] = settings.DMOJ_ENABLE_COMMENTS
         context['enable_social'] = settings.DMOJ_ENABLE_SOCIAL
+
+        # Workspace Problem List (A, B, C...) with points and tag pills (Mockup docs/5.png)
+        cps = list(
+            self.object.contest_problems.select_related('problem', 'problem__group')
+            .prefetch_related('problem__types')
+            .order_by('order')
+        )
+        for i, cp in enumerate(cps):
+            cp.letter = chr(ord('A') + i) if i < 26 else f"{chr(ord('A') + (i // 26) - 1)}{chr(ord('A') + (i % 26))}"
+            cp.tag_list = list(cp.problem.types.all())
+        context['workspace_problems'] = cps
+
+        # Determine active problem: from GET param or default to first problem
+        req_prob = self.request.GET.get('problem')
+        active_cp = None
+        if req_prob:
+            for cp in cps:
+                if cp.problem.code == req_prob or cp.letter == req_prob.upper():
+                    active_cp = cp
+                    break
+        if not active_cp and cps:
+            active_cp = cps[0]
+        context['active_cp'] = active_cp
+        context['active_problem'] = active_cp.problem if active_cp else None
+        if active_cp and active_cp.problem:
+            context['description'] = active_cp.problem.description
+
+        # Score, rank & time metrics (3 top-right cards in Mockup docs/5.png)
+        total_points = sum(cp.points for cp in cps)
+        context['max_score'] = total_points
+        user_score = 0
+        user_rank = '-'
+        if self.request.user.is_authenticated and context.get('live_participation'):
+            user_score = context['live_participation'].score or 0
+        context['user_score'] = user_score
+        context['score_percent'] = int(round((user_score / total_points) * 100)) if total_points > 0 else 0
+        context['user_rank'] = user_rank
+        context['total_contestants'] = self.object.user_count or self.object.users.count() or 1
+
+        # Code editor languages
+        langs = Language.objects.filter(key__in=['PY3', 'CPP20', 'JAVA', 'C', 'CS', 'GO', 'RS', 'CPP17', 'PY2']).order_by('name')
+        if not langs.exists():
+            langs = Language.objects.all().order_by('name')[:10]
+        context['languages'] = langs
+        context['default_language'] = (
+            self.request.profile.language if self.request.user.is_authenticated and self.request.profile.language
+            else langs.first()
+        )
+
         return context
 
 

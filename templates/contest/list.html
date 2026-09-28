@@ -1,317 +1,512 @@
-{% extends "common-content.html" %}
-{% block meta %}
-    <meta name="description" content="The {{ SITE_NAME }}'s contest list - past, present, and future.">
+{% extends "base.html" %}
+
+{% block title %}{{ _("Contests") }} — {{ SITE_NAME }}{% endblock %}
+
+{% block media %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ static('contests-list.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="contests-catalog-wrapper" id="contests-catalog-wrapper">
+
+    <!-- Top Header Bar -->
+    <header class="contests-catalog-header">
+        <div class="header-titles">
+            <div class="title-with-badge">
+                <h1 class="contests-main-title">{{ _("Contests") }}</h1>
+                <span class="contests-count-pill" id="contests-count-badge">
+                    {{ (current_contests|length) + (future_contests|length) + (object_list|length) }}
+                </span>
+            </div>
+            <p class="contests-subtitle">
+                {{ _("Compete, test your problem-solving skills, and climb the global leaderboard.") }}
+            </p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="header-search-wrap">
+            <form action="{{ url('contest_list') }}" method="GET" class="contests-search-form" id="contests-search-form">
+                <i class="fa fa-search search-icon" aria-hidden="true"></i>
+                <input type="text"
+                       name="search"
+                       id="contests-search-input"
+                       class="contests-search-input"
+                       placeholder="{{ _('Search contests by name or key...') }}"
+                       value="{{ search_query or '' }}"
+                       autocomplete="off">
+                {% if search_query %}
+                    <a href="{{ url('contest_list') }}" class="search-clear-btn" id="search-clear-btn" title="{{ _('Clear search') }}">
+                        <i class="fa fa-times"></i>
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+    </header>
+
+    <!-- Quick Filter Tab Pills -->
+    <nav class="contests-filter-nav" aria-label="{{ _('Contest status filters') }}">
+        <div class="filter-pill-group" id="contest-status-pills">
+            <button type="button" class="filter-pill-btn active" data-tab="all">
+                <i class="fa fa-th-large"></i> {{ _("All Contests") }}
+            </button>
+            <button type="button" class="filter-pill-btn" data-tab="ongoing">
+                <span class="live-dot-pulse"></span>
+                {{ _("Ongoing") }}
+                {% if current_contests or active_participations %}
+                    <span class="pill-badge pill-badge-live">{{ (current_contests|length) + (active_participations|length) }}</span>
+                {% endif %}
+            </button>
+            <button type="button" class="filter-pill-btn" data-tab="upcoming">
+                <i class="fa fa-calendar-check-o"></i>
+                {{ _("Upcoming") }}
+                {% if future_contests %}
+                    <span class="pill-badge">{{ future_contests|length }}</span>
+                {% endif %}
+            </button>
+            <button type="button" class="filter-pill-btn" data-tab="past">
+                <i class="fa fa-history"></i> {{ _("Past") }}
+            </button>
+        </div>
+    </nav>
+
+    <!-- Featured Contest Hero Card (Mockup 4.png) -->
+    {% if featured_contest %}
+    <section class="featured-contest-hero" id="featured-contest-hero">
+        <div class="featured-card-inner">
+            <div class="featured-content-col">
+                <div class="featured-badge-row">
+                    <span class="badge-featured-label">
+                        <i class="fa fa-star"></i> {{ _("FEATURED CONTEST") }}
+                    </span>
+                    {% if featured_contest.is_rated %}
+                        <span class="badge-tag-pill tag-rated">{{ _("Rated") }}</span>
+                    {% else %}
+                        <span class="badge-tag-pill tag-unrated">{{ _("Unrated") }}</span>
+                    {% endif %}
+                    {% if featured_contest.format_name %}
+                        <span class="badge-tag-pill tag-format">{{ featured_contest.format_name|upper }}</span>
+                    {% endif %}
+                    {% if featured_contest.time_limit %}
+                        <span class="badge-tag-pill tag-duration">
+                            <i class="fa fa-clock-o"></i> {{ as_countdown(featured_contest.time_limit) }}
+                        </span>
+                    {% endif %}
+                </div>
+
+                <h2 class="featured-contest-title">
+                    <a href="{{ url('contest_view', featured_contest.key) }}">
+                        {{ featured_contest.name }}
+                    </a>
+                </h2>
+
+                <p class="featured-contest-desc">
+                    {{ featured_contest.summary or featured_contest.description|striptags|truncate(160) or _("Join thousands of programmers competing for ratings and ranking honors.") }}
+                </p>
+
+                <!-- Metadata Row -->
+                <div class="featured-meta-row">
+                    <div class="meta-item">
+                        <i class="fa fa-calendar meta-icon"></i>
+                        <span>{{ featured_contest.start_time|date("M j, Y, H:i") }}</span>
+                    </div>
+                    {% if featured_contest.time_limit %}
+                    <div class="meta-item">
+                        <i class="fa fa-hourglass-half meta-icon"></i>
+                        <span>{{ as_countdown(featured_contest.time_limit) }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="meta-item">
+                        <i class="fa fa-users meta-icon"></i>
+                        <span>{{ featured_contest.user_count|default(featured_contest.users.count()) }} {{ _("Registered") }}</span>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="featured-actions-row">
+                    <a href="{{ url('contest_view', featured_contest.key) }}" class="btn-hero-primary" id="btn-hero-register">
+                        {% if featured_contest.start_time > now %}
+                            <i class="fa fa-pencil-square-o"></i> {{ _("Register Now") }}
+                        {% elif featured_contest.end_time < now %}
+                            <i class="fa fa-bar-chart"></i> {{ _("View Results & Standings") }}
+                        {% else %}
+                            <i class="fa fa-play-circle"></i> {{ _("Enter Contest") }}
+                        {% endif %}
+                    </a>
+                    <a href="{{ url('contest_ranking', featured_contest.key) }}" class="btn-hero-secondary">
+                        <i class="fa fa-trophy"></i> {{ _("Scoreboard") }}
+                    </a>
+                </div>
+            </div>
+
+            <!-- Countdown Timer Card -->
+            <div class="featured-timer-col">
+                <div class="timer-card-box">
+                    <div class="timer-box-header">
+                        {% if featured_contest.start_time > now %}
+                            <span class="timer-label">{{ _("Starts In") }}</span>
+                        {% elif featured_contest.end_time > now %}
+                            <span class="timer-label text-live">{{ _("Ends In") }}</span>
+                        {% else %}
+                            <span class="timer-label text-ended">{{ _("Contest Concluded") }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="timer-digits-row"
+                         data-target-time="{{ (featured_contest.start_time if featured_contest.start_time > now else featured_contest.end_time)|date('c') }}"
+                         id="featured-countdown-timer">
+                        <div class="timer-digit-block">
+                            <span class="digit-val" id="timer-days">--</span>
+                            <span class="digit-label">{{ _("Days") }}</span>
+                        </div>
+                        <span class="digit-separator">:</span>
+                        <div class="timer-digit-block">
+                            <span class="digit-val" id="timer-hours">--</span>
+                            <span class="digit-label">{{ _("Hours") }}</span>
+                        </div>
+                        <span class="digit-separator">:</span>
+                        <div class="timer-digit-block">
+                            <span class="digit-val" id="timer-minutes">--</span>
+                            <span class="digit-label">{{ _("Mins") }}</span>
+                        </div>
+                        <span class="digit-separator">:</span>
+                        <div class="timer-digit-block">
+                            <span class="digit-val" id="timer-seconds">--</span>
+                            <span class="digit-label">{{ _("Secs") }}</span>
+                        </div>
+                    </div>
+
+                    <div class="timer-card-footer">
+                        <span class="live-dot-pulse"></span>
+                        <span class="timer-footer-text">
+                            {{ _("Syncing with official contest bridge") }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Main Two-Column Layout: Tables + Desktop Sidebar -->
+    <div class="contests-grid-layout">
+        <!-- Left: Contest Tables (Ongoing, Upcoming, Past) -->
+        <main class="contests-main-col">
+
+            <!-- 1. Ongoing Contests Section -->
+            {% if current_contests or active_participations %}
+            <section class="contest-table-section section-ongoing" id="section-ongoing">
+                <div class="section-header-bar">
+                    <div class="section-title-wrap">
+                        <span class="live-indicator-dot"></span>
+                        <h2 class="section-title">{{ _("Ongoing Contests") }}</h2>
+                        <span class="section-badge">{{ (current_contests|length) + (active_participations|length) }}</span>
+                    </div>
+                </div>
+
+                <div class="contest-card-table-wrap">
+                    <table class="contests-table table-ongoing">
+                        <thead>
+                            <tr>
+                                <th class="col-contest">{{ _("Contest") }}</th>
+                                <th class="col-time">{{ _("Time Left") }}</th>
+                                <th class="col-format">{{ _("Format") }}</th>
+                                <th class="col-rating">{{ _("Rated") }}</th>
+                                <th class="col-action">{{ _("Action") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for participation in active_participations %}
+                                {% with contest=participation.contest %}
+                                <tr class="contest-row live-row">
+                                    <td class="col-contest">
+                                        <div class="contest-name-cell">
+                                            <a href="{{ url('contest_view', contest.key) }}" class="contest-link font-bold">
+                                                {{ contest.name }}
+                                            </a>
+                                            <span class="user-active-badge">{{ _("Participating") }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="col-time">
+                                        <span class="countdown-tag time-live">
+                                            <i class="fa fa-clock-o"></i> {{ as_countdown(participation.time_remaining) }}
+                                        </span>
+                                    </td>
+                                    <td class="col-format">
+                                        <span class="format-badge">{{ contest.format_name|upper or "STANDARD" }}</span>
+                                    </td>
+                                    <td class="col-rating">
+                                        {% if contest.is_rated %}
+                                            <span class="badge-rated">{{ _("Rated") }}</span>
+                                        {% else %}
+                                            <span class="badge-unrated">{{ _("Unrated") }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-action">
+                                        <a href="{{ url('contest_view', contest.key) }}" class="btn-table-primary">
+                                            {{ _("Resume") }} <i class="fa fa-arrow-right"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endwith %}
+                            {% endfor %}
+
+                            {% for contest in current_contests %}
+                                <tr class="contest-row">
+                                    <td class="col-contest">
+                                        <div class="contest-name-cell">
+                                            <a href="{{ url('contest_view', contest.key) }}" class="contest-link font-bold">
+                                                {{ contest.name }}
+                                            </a>
+                                        </div>
+                                    </td>
+                                    <td class="col-time">
+                                        <span class="countdown-tag time-live">
+                                            <i class="fa fa-clock-o"></i> {{ as_countdown(contest.time_before_end) }}
+                                        </span>
+                                    </td>
+                                    <td class="col-format">
+                                        <span class="format-badge">{{ contest.format_name|upper or "STANDARD" }}</span>
+                                    </td>
+                                    <td class="col-rating">
+                                        {% if contest.is_rated %}
+                                            <span class="badge-rated">{{ _("Rated") }}</span>
+                                        {% else %}
+                                            <span class="badge-unrated">{{ _("Unrated") }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-action">
+                                        <a href="{{ url('contest_view', contest.key) }}" class="btn-table-primary">
+                                            {{ _("Enter") }} <i class="fa fa-play"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- 2. Upcoming Contests Section -->
+            {% if future_contests %}
+            <section class="contest-table-section section-upcoming" id="section-upcoming">
+                <div class="section-header-bar">
+                    <div class="section-title-wrap">
+                        <i class="fa fa-calendar-check-o section-icon"></i>
+                        <h2 class="section-title">{{ _("Upcoming Contests") }}</h2>
+                        <span class="section-badge">{{ future_contests|length }}</span>
+                    </div>
+                </div>
+
+                <div class="contest-card-table-wrap">
+                    <table class="contests-table table-upcoming">
+                        <thead>
+                            <tr>
+                                <th class="col-contest">{{ _("Contest") }}</th>
+                                <th class="col-start">{{ _("Start Time") }}</th>
+                                <th class="col-duration">{{ _("Duration") }}</th>
+                                <th class="col-format">{{ _("Format") }}</th>
+                                <th class="col-rating">{{ _("Rated") }}</th>
+                                <th class="col-action">{{ _("Action") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contest in future_contests %}
+                                <tr class="contest-row">
+                                    <td class="col-contest">
+                                        <div class="contest-name-cell">
+                                            <a href="{{ url('contest_view', contest.key) }}" class="contest-link">
+                                                {{ contest.name }}
+                                            </a>
+                                            {% if contest.summary %}
+                                                <p class="contest-cell-sub">{{ contest.summary }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="col-start">
+                                        <div class="time-dual-cell">
+                                            <span class="primary-time">{{ contest.start_time|date("M j, H:i") }}</span>
+                                            <span class="secondary-countdown">{{ _("in %(time)s", time=as_countdown(contest.time_before_start)) }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="col-duration">
+                                        <span>{{ as_countdown(contest.time_limit) if contest.time_limit else "—" }}</span>
+                                    </td>
+                                    <td class="col-format">
+                                        <span class="format-badge">{{ contest.format_name|upper or "STANDARD" }}</span>
+                                    </td>
+                                    <td class="col-rating">
+                                        {% if contest.is_rated %}
+                                            <span class="badge-rated">{{ _("Rated") }}</span>
+                                        {% else %}
+                                            <span class="badge-unrated">{{ _("Unrated") }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-action">
+                                        <a href="{{ url('contest_view', contest.key) }}" class="btn-table-outline">
+                                            <i class="fa fa-bell-o"></i> {{ _("Details") }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- 3. Past Contests Section -->
+            <section class="contest-table-section section-past" id="section-past">
+                <div class="section-header-bar">
+                    <div class="section-title-wrap">
+                        <i class="fa fa-history section-icon"></i>
+                        <h2 class="section-title">{{ _("Past Contests") }}</h2>
+                        <span class="section-badge">{{ object_list|length }}</span>
+                    </div>
+                </div>
+
+                <div class="contest-card-table-wrap">
+                    <table class="contests-table table-past">
+                        <thead>
+                            <tr>
+                                <th class="col-contest">{{ _("Contest") }}</th>
+                                <th class="col-date">{{ _("Date") }}</th>
+                                <th class="col-duration">{{ _("Duration") }}</th>
+                                <th class="col-users">{{ _("Users") }}</th>
+                                <th class="col-standings">{{ _("Standings") }}</th>
+                                <th class="col-action">{{ _("Action") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contest in object_list %}
+                                <tr class="contest-row">
+                                    <td class="col-contest">
+                                        <div class="contest-name-cell">
+                                            <a href="{{ url('contest_view', contest.key) }}" class="contest-link">
+                                                {{ contest.name }}
+                                            </a>
+                                            {% if contest.is_rated %}
+                                                <span class="badge-rated-mini">{{ _("Rated") }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="col-date">
+                                        <span>{{ contest.start_time|date("M j, Y") }}</span>
+                                    </td>
+                                    <td class="col-duration">
+                                        <span>{{ as_countdown(contest.time_limit) if contest.time_limit else "—" }}</span>
+                                    </td>
+                                    <td class="col-users">
+                                        <span>{{ contest.user_count|default(contest.users.count()) }}</span>
+                                    </td>
+                                    <td class="col-standings">
+                                        <a href="{{ url('contest_ranking', contest.key) }}" class="standings-link" title="{{ _('View Final Standings') }}">
+                                            <i class="fa fa-trophy"></i> {{ _("Rankings") }}
+                                        </a>
+                                    </td>
+                                    <td class="col-action">
+                                        <a href="{{ url('contest_view', contest.key) }}" class="btn-table-secondary">
+                                            <i class="fa fa-play-circle-o"></i> {{ _("Practice") }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr class="empty-state-row">
+                                    <td colspan="6" class="empty-cell">
+                                        <div class="empty-box">
+                                            <i class="fa fa-calendar-o empty-icon"></i>
+                                            <p class="empty-title">{{ _("No past contests found") }}</p>
+                                            <p class="empty-subtitle">{{ _("Check back after the first scheduled contest completes.") }}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if page_obj.has_other_pages() %}
+                    <div class="contests-bottom-pagination">
+                        {% include "list-pages.html" %}
+                    </div>
+                {% endif %}
+            </section>
+        </main>
+
+        <!-- Right: Desktop Sidebar (Calendar & Rating Leaders) -->
+        <aside class="contests-sidebar-col">
+            <!-- Widget 1: Mini Contest Calendar -->
+            <div class="sidebar-widget-card widget-calendar">
+                <div class="widget-header">
+                    <h3 class="widget-title"><i class="fa fa-calendar"></i> {{ _("Contest Calendar") }}</h3>
+                    <span class="widget-month-tag">{{ now|date("F Y") }}</span>
+                </div>
+                <div class="calendar-grid-box" id="mini-contest-calendar">
+                    <div class="cal-days-header">
+                        <span>{{ _("Su") }}</span>
+                        <span>{{ _("Mo") }}</span>
+                        <span>{{ _("Tu") }}</span>
+                        <span>{{ _("We") }}</span>
+                        <span>{{ _("Th") }}</span>
+                        <span>{{ _("Fr") }}</span>
+                        <span>{{ _("Sa") }}</span>
+                    </div>
+                    <div class="cal-days-grid" id="calendar-days-cells">
+                        <!-- Populated by contests-list.js -->
+                    </div>
+                </div>
+                <div class="widget-calendar-footer">
+                    <span class="legend-dot dot-contest"></span>
+                    <span class="legend-text">{{ _("Contest Day") }}</span>
+                    <span class="legend-dot dot-today"></span>
+                    <span class="legend-text">{{ _("Today") }}</span>
+                </div>
+            </div>
+
+            <!-- Widget 2: Rating Leaders / Top Contestants -->
+            <div class="sidebar-widget-card widget-leaders">
+                <div class="widget-header">
+                    <h3 class="widget-title"><i class="fa fa-trophy"></i> {{ _("Rating Leaders") }}</h3>
+                    <a href="{{ url('user_list') }}" class="widget-link">{{ _("All") }} <i class="fa fa-angle-right"></i></a>
+                </div>
+                <div class="leaders-list">
+                    {% for profile in top_contestants %}
+                        <div class="leader-item">
+                            <span class="leader-rank rank-{{ loop.index }}">{{ loop.index }}</span>
+                            <div class="leader-info">
+                                <a href="{{ url('user_page', profile.user.username) }}" class="leader-username rating-{{ profile.rating_class }}">
+                                    {{ profile.display_name }}
+                                </a>
+                                <span class="leader-rating">{{ profile.rating|default(1500)|int }}</span>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="leaders-empty">
+                            <p>{{ _("No rated participants yet.") }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Widget 3: Contest Format & Rating Rules -->
+            <div class="sidebar-widget-card widget-rules">
+                <div class="widget-header">
+                    <h3 class="widget-title"><i class="fa fa-info-circle"></i> {{ _("Competition Rules") }}</h3>
+                </div>
+                <div class="rules-body">
+                    <p class="rule-text"><strong>{{ _("ICPC Format") }}:</strong> {{ _("Ranked by problems solved, ties broken by total penalty time.") }}</p>
+                    <p class="rule-text"><strong>{{ _("IOI Format") }}:</strong> {{ _("Ranked by total partial points scored across all testcase batches.") }}</p>
+                    <p class="rule-text"><strong>{{ _("Ratings") }}:</strong> {{ _("Glicko/Elo rating updates calculated after final standings lock.") }}</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+</div>
 {% endblock %}
 
 {% block js_media %}
-    <script src="{{ static('libs/featherlight/featherlight.min.js') }}" type="text/javascript"></script>
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $('.time-remaining').each(function () {
-                count_down($(this));
-            });
-
-            $('.contest-tag').find('a[data-featherlight]').featherlight();
-
-            $('.join-warning').click(function () {
-                return confirm({{ _('Are you sure you want to join?')|htmltojs }} + '\n' +
-                    {{ _('Joining a contest for the first time starts your timer, after which it becomes unstoppable.')|htmltojs }});
-            });
-
-            // var tooltip_classes = 'tooltipped tooltipped-e';
-            //
-            // $('.contest-tag').each(function () {
-            //     var link = $(this);//
-            //     link.mouseenter(function (e) {
-            //         link.addClass(tooltip_classes).attr('aria-label', link.attr('data-description'));
-            //     }).mouseleave(function (e) {
-            //         link.removeClass(tooltip_classes).removeAttr('aria-label');
-            //     });
-            // });
-        });
-    </script>
-{% endblock %}
-
-{% block title_ruler %}{% endblock %}
-
-{% block title_row %}
-    {% set tab = 'list' %}
-    {% include "contest/contest-list-tabs.html" %}
-{% endblock %}
-
-{% macro contest_head(contest) %}
-    {% spaceless %}
-        <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title">
-            {{- contest.name -}}
-        </a>
-        <span class="contest-tags">
-            {% if not contest.is_visible %}
-                <span style="background-color: #000000; color: #ffffff" class="contest-tag">
-                    <i class="fa fa-eye-slash"></i> {{ _('hidden') }}
-                </span>
-            {% endif %}
-            {% if contest.is_organization_private %}
-                {% for org in contest.organizations.all() %}
-                    <span style="background-color: #cccccc" class="contest-tag">
-                        <a href="{{ org.get_absolute_url() }}" style="color: #000000">
-                            <i class="fa fa-lock"></i> {{ org.name }}
-                        </a>
-                    </span>
-                {% endfor %}
-                {% for class in contest.classes.all() %}
-                    <span style="background-color: #00ccff" class="contest-tag">
-                        <a href="{{ class.get_absolute_url() }}" style="color: #000000">
-                            <i class="fa fa-users"></i> {{ class.name }}
-                        </a>
-                    </span>
-                {% endfor %}
-            {% elif contest.is_private %}
-                <span style="background-color: #666666; color: #ffffff" class="contest-tag">
-                    <i class="fa fa-lock"></i> {{ _('private') }}
-                </span>
-            {% endif %}
-            {% if contest.is_rated %}
-                <span style="background-color: #e54c14; color: #ffffff" class="contest-tag">
-                    <i class="fa fa-bar-chart"></i> {{ _('rated') }}
-                </span>
-            {% endif %}
-            {% for tag in contest.tags.all() %}
-                <span style="background-color: {{ tag.color }}" class="contest-tag">
-                    <a href="{{ url('contest_tag', tag.name) }}"
-                       style="color: {{ tag.text_color }}"
-                       data-featherlight="{{ url('contest_tag_ajax', tag.name) }}">
-                        {{- tag.name -}}
-                    </a>
-                </span>
-            {% endfor %}
-        </span>
-    {% endspaceless %}
-{% endmacro %}
-
-{% macro time_left(contest) %}
-    <div class="time time-left">
-        {% if contest.time_limit %}
-            {{ contest.start_time|date(_("M j, Y, G:i")) }} -
-            {{ contest.end_time|date(_("M j, Y, G:i")) }}
-        {% else %}
-            {{ contest.start_time|date(_("M j, Y, G:i")) }}
-        {% endif %}
-        <br>
-        {% if contest.time_limit %}
-            {% set time_limit=contest.time_limit|timedelta('localized-no-seconds') %}
-            {{ _('%(time_limit)s window', time_limit=time_limit) }}
-        {% else %}
-            {% set duration=contest.contest_window_length|timedelta('localized-no-seconds') %}
-            {{ _('%(duration)s long', duration=duration) }}
-        {% endif %}
-    </div>
-{% endmacro %}
-
-{% macro user_count(contest, user) %}
-    {% if contest.can_see_own_scoreboard(user) %}
-        <a href="{{ url('contest_ranking', contest.key) }}">{{ contest.user_count }}</a>
-    {% else %}
-        {{ contest.user_count }}
-    {% endif %}
-{% endmacro %}
-
-{% macro contest_join(contest, request, finished_contests) %}
-    {% if not request.in_contest %}
-        <td>
-            {% if contest.is_live_joinable_by(request.user) %}
-                <form action="{{ url('contest_join', contest.key) }}" method="post">
-                    {% csrf_token %}
-                    <input type="submit" class="unselectable button full participate-button join-warning"
-                           value="{{ _('Join') }}">
-                </form>
-            {% elif contest.is_spectatable_by(request.user) %}
-                <form action="{{ url('contest_join', contest.key) }}" method="post">
-                    {% csrf_token %}
-                    <input type="submit" class="unselectable button full participate-button"
-                           value="{{ _('Spectate') }}">
-                </form>
-            {% else %}
-                <form action="{{ url('contest_join', contest.key) }}" method="post">
-                    {% csrf_token %}
-                    <input type="submit" class="unselectable button full participate-button disabled"
-                           value="{{ _('Join') }}" disabled title="{{ _('You cannot join this contest.') }}">
-                </form>
-            {% endif %}
-        </td>
-    {% endif %}
-{% endmacro %}
-
-{% block body %}
-    <div class="content-description">
-        {% if active_participations %}
-            <h4>{{ _('Active contests') }}</h4>
-            <table class="contest-list table striped">
-                <thead>
-                <tr>
-                    <th style="width:90%">{{ _('Contest') }}</th>
-                    <th>{{ _('Users') }}</th>
-                    {% if not request.in_contest %}
-                        <th style="width:15%"></th>
-                    {% endif %}
-                </tr>
-                </thead>
-                <tbody>
-                {% for participation in active_participations %}
-                    {% with contest=participation.contest %}
-                        <tr>
-                            <td>
-                                <div class="contest-block">
-                                    {{ contest_head(contest) }}
-                                    {% if contest.start_time %}
-                                        <br>
-                                        {% if contest.time_limit %}
-                                            <span class="time">{{ _('Window ends in %(countdown)s', countdown=as_countdown(participation.time_remaining)) }}</span>
-                                        {% elif contest.time_before_end %}
-                                            <span class="time">{{ _('Ends in %(countdown)s', countdown=as_countdown(contest.time_before_end)) }}</span>
-                                        {% endif %}
-                                        {{ time_left(contest) }}
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td>
-                                {{ user_count(contest, request.user) }}
-                            </td>
-                            {{ contest_join(contest, request, finished_contests) }}
-                        </tr>
-                    {% endwith %}
-                {% endfor %}
-                </tbody>
-            </table>
-            <br>
-        {% endif %}
-
-        {% if current_contests %}
-            <h4>{{ _('Ongoing contests') }}</h4>
-            <table class="contest-list table striped">
-                <thead>
-                <tr>
-                    <th style="width:90%">{{ _('Contest') }}</th>
-                    <th>{{ _('Users') }}</th>
-                    {% if not request.in_contest %}
-                        <th style="width:15%"></th>
-                    {% endif %}
-                </tr>
-                </thead>
-                <tbody>
-                {% for contest in current_contests %}
-                    <tr>
-                        <td>
-                            <div class="contest-block">
-                                {{ contest_head(contest) }}
-                                {% if contest.start_time %}
-                                    <br>
-                                    {% if contest.time_before_end %}
-                                        <span class="time">{{ _('Ends in %(countdown)s', countdown=as_countdown(contest.time_before_end)) }}</span>
-                                    {% endif %}
-                                    {{ time_left(contest) }}
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            {{ user_count(contest, request.user) }}
-                        </td>
-                        {{ contest_join(contest, request, finished_contests) }}
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            <br>
-        {% endif %}
-
-        <h4>{{ _('Upcoming contests') }}</h4>
-        {% if future_contests %}
-            <table class="contest-list table striped">
-                <thead>
-                <tr>
-                    <th>{{ _('Contest') }}</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for contest in future_contests %}
-                    <tr>
-                        <td>
-                            <div class="contest-block">
-                                {{ contest_head(contest) }}
-                                {% if contest.start_time %}
-                                    <br>
-                                    {% if contest.time_before_start %}
-                                        <span class="time">{{ _('Starting in %(countdown)s', countdown=as_countdown(contest.time_before_start)) }}</span>
-                                    {% endif %}
-                                    {{ time_left(contest) }}
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <i>{{ _('There are no scheduled contests at this time.') }}</i>
-            <br>
-        {% endif %}
-        <br>
-
-        <h4 id="past-contests">{{ _('Past contests') }}</h4>
-        {% if page_obj or search_query %}
-            <div class="top-pagination-bar">
-                {% include "list-pages.html" %}
-                <form id="search-form" name="form" action="" method="get">
-                    <div>
-                        <input id="search" type="text" name="search" value="{{ search_query or '' }}"
-                            placeholder="{{ _('Search contests...') }}">
-                    </div>
-                </form>
-            </div>
-        {% endif %}
-        {% if past_contests %}
-            <table class="contest-list table striped">
-                <thead>
-                <tr>
-                    <th style="width:90%">
-                        <a href="{{ sort_links.name }}" class="contest-sort-link">{{ _('Contest') }}{{ sort_order.name }}</a>
-                    </th>
-                    <th>
-                        <a href="{{ sort_links.user_count }}" class="contest-sort-link">{{ _('Users') }}{{ sort_order.user_count }}</a>
-                    </th>
-                    {% if not request.in_contest %}
-                        <th style="width:15%"></th>
-                    {% endif %}
-                </tr>
-                </thead>
-                <tbody>
-                {% for contest in past_contests %}
-                    <tr>
-                        <td>
-                            <div class="contest-block">
-                                {{ contest_head(contest) }}
-                                {{ time_left(contest) }}
-                            </div>
-                        </td>
-                        <td>
-                            {{ user_count(contest, request.user) }}
-                        </td>
-                        {% if not request.in_contest %}
-                            <td><form action="{{ url('contest_join', contest.key) }}" method="post">
-                                    {% csrf_token %}
-                                    <input type="submit" class="unselectable button full participate-button"
-                                           value="{{ _('Virtual join') }}">
-                            </form></td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            {% if page_obj and page_obj.has_other_pages() %}
-                <div class="bottom-pagination-bar">{% include "list-pages.html" %}</div>
-            {% endif %}
-        {% else %}
-            <i>{{ _('There are no past contests.') }}</i>
-            <br>
-        {% endif %}
-    </div>
+    {{ super() }}
+    <script src="{{ static('contests-list.js') }}"></script>
 {% endblock %}

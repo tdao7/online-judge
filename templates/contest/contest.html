@@ -1,250 +1,369 @@
-{% extends "common-content.html" %}
+{% extends "base.html" %}
 
-{% block title_ruler %}{% endblock %}
+{% block title %}{{ contest.name }} — {{ SITE_NAME }}{% endblock %}
 
-{% block title_row %}
-    {% set tab = 'detail' %}
-    {% set title = contest.name %}
-    {% include "contest/contest-tabs.html" %}
+{% block media %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ static('contest-workspace.css') }}">
+    {% if enable_comments %}
+        {% include "comments/media-css.html" %}
+    {% endif %}
 {% endblock %}
 
-{% block content_js_media %}
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $('.time-remaining').each(function () {
-                count_down($(this));
-            });
-        });
-    </script>
-    {% include "contest/media-js.html" %}
-    {% include "comments/media-js.html" %}
+{% block js_media %}
+    {{ super() }}
+    <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
+    <script src="{{ static('contest-workspace.js') }}"></script>
+    {% if enable_comments %}
+        {% include "comments/media-js.html" %}
+    {% endif %}
 {% endblock %}
 
-{% block content_media %}
-    {% include "comments/media-css.html" %}
-{% endblock %}
+{% block title_row %}{# Overridden for unified modern contest workspace header #}{% endblock %}
+{% block title_ruler %}{# Overridden #}{% endblock %}
 
 {% block body %}
-    <div id="banner">
-        <a href="https://www.timeanddate.com/worldclock/fixedtime.html?msg={{ contest.name|urlquote('') }}&amp;iso=
-                {{- (contest.start_time if contest.start_time >= now else contest.end_time)|utc|date('Y-m-d\TH:i:s') }}" class="date">
-            {%- if contest.is_in_contest(request.user) and not request.participation.live -%}
-                {% if request.participation.spectate %}
-                    {{- _('Spectating, contest ends in %(countdown)s.', countdown=as_countdown(contest.time_before_end)) -}}
-                {% elif request.participation.end_time %}
-                    {{- _('Participating virtually, %(countdown)s remaining.', countdown=as_countdown(request.participation.time_remaining)) -}}
-                {% else %}
-                    {{- _('Participating virtually.') -}}
-                {% endif %}
-            {%- else -%}
-                {% if contest.start_time > now %}
-                    {{- _('Starting in %(countdown)s.', countdown=as_countdown(contest.time_before_start)) -}}
-                {% elif contest.end_time < now %}
-                    {{- _('Contest is over.') -}}
-                {% else %}
-                    {%- if has_joined -%}
-                        {% if live_participation.ended %}
-                            {{- _('Your time is up! Contest ends in %(countdown)s.', countdown=as_countdown(contest.time_before_end)) -}}
-                        {% else %}
-                            {{- _('You have %(countdown)s remaining.', countdown=as_countdown(live_participation.time_remaining)) -}}
-                        {% endif %}
-                    {%- else -%}
-                        {{ _('Contest ends in %(countdown)s.', countdown=as_countdown(contest.time_before_end)) }}
-                    {%- endif -%}
-                {% endif %}
-            {%- endif -%}
-        </a>
-        <div id="time">
-            {% with start_time=contest.start_time|date(_("F j, Y, G:i T")) %}
-                {% if contest.time_limit %}
-                    {% set end_time=contest.end_time|date(_("F j, Y, G:i T")) %}
-                    {% set time_limit=contest.time_limit|timedelta('localized-no-seconds') %}
-                    {{ _('%(time_limit)s window between %(start_time)s and %(end_time)s', start_time=bold(start_time), end_time=bold(end_time), time_limit=bold(time_limit)) }}
-                {% else %}
-                    {% set length=contest.contest_window_length|timedelta('localized-no-seconds') %}
-                    {{ _('%(length)s long starting on %(start_time)s', start_time=bold(start_time), length=bold(length)) }}
-                {% endif %}
-            {% endwith %}
-        </div>
-        {% if contest.show_short_display %}
-            <div id="details">
-                <ul>
-                    {% with authors=contest.authors.all() %}
-                        {% if authors %}
-                            <li>
-                                {% trans trimmed count=authors|length, link_authors=link_users(authors) %}
-                                    The author of this contest is {{ link_authors }}.
-                                {% pluralize count %}
-                                    The authors of this contest are {{ link_authors }}.
-                                {% endtrans %}
-                            </li>
-                        {% endif %}
-                    {% endwith %}
-                    {% with testers=contest.testers.all() %}
-                        {% if testers %}
-                            <li>
-                                {% trans trimmed count=testers|length, link_testers=link_users(testers) %}
-                                    Special thanks to {{ link_testers }} for testing and feedback on the problems.
-                                {% pluralize count %}
-                                    Special thanks to {{ link_testers }} for testing and feedback on the problems.
-                                {% endtrans %}
-                            </li>
-                        {% endif %}
-                    {% endwith %}
-                    <li>
-                        {% if contest.is_rated %}
-                            {% if contest.rate_all %}
-                                {% if contest.rating_floor is not none and contest.rating_ceiling is not none %}
-                                    {{ _('This contest will be **rated** for **all** participants who have a rating between **%(rating_floor)d** and **%(rating_ceiling)d**, inclusive.', rating_floor=contest.rating_floor, rating_ceiling=contest.rating_ceiling)|markdown('default') }}
-                                {% elif contest.rating_floor is not none and contest.rating_ceiling is none %}
-                                    {{ _('This contest will be **rated** for **all** participants who have a rating of at least **%(rating_floor)d**.', rating_floor=contest.rating_floor)|markdown('default') }}
-                                {% elif contest.rating_floor is none and contest.rating_ceiling is not none %}
-                                    {{ _('This contest will be **rated** for **all** participants who have a rating of at most **%(rating_ceiling)d**.', rating_ceiling=contest.rating_ceiling)|markdown('default') }}
-                                {% else %}
-                                    {{ _('This contest will be **rated** for **all** participants.')|markdown('default') }}
-                                {% endif %}
-                            {% else %}
-                                {% if contest.rating_floor is not none and contest.rating_ceiling is not none %}
-                                    {{ _('This contest will be **rated** for participants who submit at least once and have a rating between **%(rating_floor)d** and **%(rating_ceiling)d**, inclusive.', rating_floor=contest.rating_floor, rating_ceiling=contest.rating_ceiling)|markdown('default') }}
-                                {% elif contest.rating_floor is not none and contest.rating_ceiling is none %}
-                                    {{ _('This contest will be **rated** for participants who submit at least once and have a rating of at least **%(rating_floor)d**.', rating_floor=contest.rating_floor)|markdown('default') }}
-                                {% elif contest.rating_floor is none and contest.rating_ceiling is not none %}
-                                    {{ _('This contest will be **rated** for participants who submit at least once and have a rating of at most **%(rating_ceiling)d**.', rating_ceiling=contest.rating_ceiling)|markdown('default') }}
-                                {% else %}
-                                    {{ _('This contest will be **rated** for participants who submit at least once.')|markdown('default') }}
-                                {% endif %}
-                            {% endif %}
-                        {% else %}
-                            {{ _('This contest will **not** be rated.')|markdown('default') }}
-                        {% endif %}
-                    </li>
-                    <li>
-                        {% filter markdown('default') %}
-                            {% trans trimmed count=metadata.problem_count %}
-                                There is **{{ count }}** problem in this contest.
-                            {% pluralize count %}
-                                There are **{{ count }}** problems in this contest.
-                            {% endtrans %}
-                        {% endfilter %}
-                        <ul>
-                            <li>
-                                {% if metadata.has_partials %}
-                                    {{ _('**Partial scoring is enabled** for some or all of these problems.')|markdown('default') }}
-                                {% else %}
-                                    {{ _('This contest **will not use partial scoring**.')|markdown('default') }}
-                                {% endif %}
-                            </li>
-                            <li>
-                                {% if metadata.has_pretests %}
-                                    {{ _('The pretest system **will be used** for some or all of these problems.')|markdown('default') }}
-                                {% else %}
-                                    {{ _('The pretest system **will not be used** for this contest.')|markdown('default') }}
-                                {% endif %}
-                            </li>
-                            <li>
-                                {% if metadata.has_submission_cap %}
-                                    {{ _('Some or all of these problems **have a submission limit**.')|markdown('default') }}
-                                {% else %}
-                                    {{ _('There is **no submission limit** for any of these problems.')|markdown('default') }}
-                                {% endif %}
-                            </li>
-                        </ul>
-                    </li>
-                    <li>
-                        {{ _('The contest format is **%(format)s**.', format=contest.format.name)|markdown('default') }}
-                        <ul>
-                            {% for line in contest.format.get_short_form_display() %}
-                                <li>{{ line|markdown('default') }}</li>
-                            {% endfor %}
-                        </ul>
-                    </li>
-                    <li>
-                        {% if contest.scoreboard_visibility == contest.SCOREBOARD_VISIBLE %}
-                            {{ _('The scoreboard will be **visible** for the duration of the contest.')|markdown('default') }}
-                        {% elif contest.scoreboard_visibility == contest.SCOREBOARD_AFTER_PARTICIPATION %}
-                            {{ _('The scoreboard will be **hidden** until your window is over.')|markdown('default') }}
-                        {% elif contest.scoreboard_visibility == contest.SCOREBOARD_AFTER_CONTEST %}
-                            {{ _('The scoreboard will be **hidden** for the entire duration of the contest.')|markdown('default') }}
-                        {% elif contest.scoreboard_visibility == contest.SCOREBOARD_HIDDEN %}
-                            {{ _('The scoreboard will be **hidden**, even after the contest is over.')|markdown('default') }}
-                        {% endif %}
-                    </li>
-                    {% if contest.access_code %}
-                        <li>
-                            {{ _('An **access code is required** to join the contest.')|markdown('default') }}
-                        </li>
-                    {% endif %}
-                </ul>
+<div class="contest-workspace-wrapper" id="contest-workspace-wrapper">
+
+    <!-- 1. Top Contest Header Bar (Mockup 5.png) -->
+    <header class="contest-workspace-header">
+        <div class="header-left-col">
+            <!-- Breadcrumbs -->
+            <nav class="contest-breadcrumb" aria-label="{{ _('Breadcrumb') }}">
+                <a href="{{ url('contest_list') }}" class="crumb-link">{{ _("Contests") }}</a>
+                <span class="crumb-sep"><i class="fa fa-angle-right"></i></span>
+                <span class="crumb-current">{{ contest.name }}</span>
+            </nav>
+
+            <!-- Contest Title -->
+            <div class="contest-title-row">
+                <h1 class="contest-title">{{ contest.name }}</h1>
             </div>
-        {% endif %}
-    </div>
 
-    <div class="content-description">
-        {% cache 3600 'contest_html' contest.id MATH_ENGINE %}
-            {{ contest.description|markdown('contest', MATH_ENGINE)|reference|str|safe }}
-        {% endcache %}
-    </div>
-
-    {% if contest.ended or request.user.is_superuser or is_editor or is_tester or (is_spectator and contest.started) %}
-        <hr>
-        <div class="contest-problems">
-            <h2 style="margin-bottom: 0.2em"><i class="fa fa-fw fa-question-circle"></i>{{ _('Problems') }} </h2>
-            <table class="table striped">
-                <thead>
-                <tr>
-                    <th>{{ _('Problem') }}</th>
-                    <th>{{ _('Points') }}</th>
-                    <th>{{ _('AC Rate') }}</th>
-                    <th>{{ _('Users') }}</th>
-                    {% if metadata.has_public_editorials %}
-                        <th>{{ _('Editorials') }}</th>
+            <!-- Meta info: Date & Status Pill -->
+            <div class="contest-meta-row">
+                <span class="meta-date">
+                    <i class="fa fa-calendar-o"></i>
+                    {{ contest.start_time|date("M j, Y, H:i") }} – {{ contest.end_time|date("H:i") }}
+                    {% if contest.time_limit %}
+                        ({{ as_countdown(contest.time_limit) }})
                     {% endif %}
-                </tr>
-                </thead>
-                <tbody>
-                {% for problem in contest_problems %}
-                    <tr>
-                        <td>
-                            {% if problem.is_public or request.user.is_superuser or is_editor %}
-                                <a href="{{ url('problem_detail', problem.code) }}">{{ problem.i18n_name or problem.name }}</a>
-                            {% else %}
-                                {{ problem.i18n_name or problem.name }}
-                            {% endif %}
-                        </td>
-                        <td>{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>
-                        <td>{{ problem.ac_rate|floatformat(1) }}%</td>
-                        <td>
-                            {% if problem.is_public %}
-                                <a href="{{ url('ranked_submissions', problem.code) }}">{{ problem.user_count }}</a>
-                            {% else %}
-                                {{ problem.user_count }}
-                            {% endif %}
-                        </td>
-                        {% if metadata.has_public_editorials %}
-                            <td>
-                                {% if problem.is_public and problem.has_public_editorial %}
-                                    <a href="{{ url('problem_editorial', problem.code) }}">{{ _('Editorial') }}</a>
-                                {% endif %}
-                            </td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                </span>
+
+                {% if contest.start_time > now %}
+                    <span class="contest-status-pill pill-upcoming">
+                        <i class="fa fa-clock-o"></i> {{ _("Upcoming") }}
+                    </span>
+                {% elif contest.end_time < now %}
+                    <span class="contest-status-pill pill-ended">
+                        <i class="fa fa-flag-checkered"></i> {{ _("Concluded") }}
+                    </span>
+                {% else %}
+                    <span class="contest-status-pill pill-live">
+                        <span class="live-dot-pulse"></span>
+                        {{ _("Live") }}
+                    </span>
+                {% endif %}
+            </div>
         </div>
-    {% endif %}
 
-    {% if enable_social %}
-        <hr>
-        <span class="social">
-            {{ post_to_facebook(request, contest, '<i class="fa fa-facebook-official"></i>') }}
-            {{ post_to_twitter(request, SITE_NAME + ':', contest, '<i class="fa fa-twitter"></i>') }}
-        </span>
-    {% endif %}
+        <!-- Header Right: 3 Metric Cards (Mockup 5.png) -->
+        <div class="header-right-cards">
+            <!-- Card 1: Time Remaining -->
+            <div class="contest-metric-card card-time">
+                <div class="card-icon-col">
+                    <i class="fa fa-hourglass-half timer-icon" aria-hidden="true"></i>
+                </div>
+                <div class="card-data-col">
+                    <span class="card-label">{{ _("Time Remaining") }}</span>
+                    <span class="card-val timer-val"
+                          id="contest-countdown-display"
+                          data-target-time="{{ (contest.end_time if contest.end_time > now else contest.start_time)|date('c') }}">
+                        {% if contest.end_time > now %}
+                            {{ as_countdown(contest.time_before_end) }}
+                        {% else %}
+                            00:00:00
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
 
-    {% if enable_comments %}
-        {% include "comments/list.html" %}
-    {% endif %}
+            <!-- Card 2: My Score -->
+            <div class="contest-metric-card card-score">
+                <div class="card-data-col full-width">
+                    <span class="card-label">{{ _("My Score") }}</span>
+                    <div class="score-ratio-row">
+                        <span class="score-current">{{ user_score|int }}</span>
+                        <span class="score-sep">/</span>
+                        <span class="score-total">{{ max_score|int }}</span>
+                    </div>
+                    <div class="score-progress-track">
+                        <div class="score-progress-fill" style="width: {{ score_percent }}%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Rank -->
+            <div class="contest-metric-card card-rank">
+                <div class="card-data-col">
+                    <span class="card-label">{{ _("Rank") }}</span>
+                    <div class="rank-ratio-row">
+                        <span class="rank-current">{{ user_rank }}</span>
+                        <span class="rank-sep">/</span>
+                        <span class="rank-total">{{ total_contestants }}</span>
+                    </div>
+                </div>
+                <div class="card-icon-col rank-icon-col">
+                    <i class="fa fa-bar-chart" aria-hidden="true"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. Contest Navigation Tabs (Mockup 5.png) -->
+    <nav class="contest-nav-tabs" aria-label="{{ _('Contest Navigation') }}">
+        <div class="tab-items-group">
+            <button type="button" class="contest-tab-btn active" id="btn-tab-problems" data-view="problems">
+                <i class="fa fa-th-list"></i>
+                <span>{{ _("Problems") }}</span>
+            </button>
+            <a href="{% if request.user.is_authenticated %}{{ url('contest_all_user_submissions', contest.key, request.user.username) }}{% else %}{{ url('all_submissions') }}?contest={{ contest.key }}{% endif %}" class="contest-tab-btn" id="btn-tab-submissions">
+                <i class="fa fa-history"></i>
+                <span>{{ _("Submissions") }}</span>
+            </a>
+            <a href="{{ url('contest_ranking', contest.key) }}" class="contest-tab-btn" id="btn-tab-standings">
+                <i class="fa fa-trophy"></i>
+                <span>{{ _("Standings") }}</span>
+            </a>
+            <button type="button" class="contest-tab-btn" id="btn-tab-clarifications" data-view="clarifications">
+                <i class="fa fa-comments-o"></i>
+                <span>{{ _("Clarifications") }}</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 3. Live Contest Workspace (Screen 5 Layout) -->
+    <main class="contest-workspace-main" id="contest-workspace-main">
+        <div class="contest-split-layout" id="contest-split-layout">
+
+            <!-- Col 1: Contest Problem Switcher Sidebar (A, B, C...) -->
+            <aside class="contest-problems-sidebar" id="contest-problems-sidebar" aria-label="{{ _('Contest Problems') }}">
+                <div class="problems-sidebar-header">
+                    <span class="sidebar-title">{{ _("Problems") }}</span>
+                    <span class="sidebar-count">{{ workspace_problems|length }}</span>
+                </div>
+
+                <div class="problems-list-stack">
+                    {% for cp in workspace_problems %}
+                        <a href="?problem={{ cp.problem.code }}"
+                           class="problem-nav-card {% if active_cp and active_cp.problem.code == cp.problem.code %}active{% endif %}"
+                           data-code="{{ cp.problem.code }}">
+                            <div class="problem-letter-box">
+                                {{ cp.letter }}
+                            </div>
+                            <div class="problem-card-info">
+                                <h3 class="problem-card-name">{{ cp.problem.name }}</h3>
+                                <div class="problem-card-badges">
+                                    <span class="badge-pts">{{ cp.points|int }} {{ _("points") }}</span>
+                                    {% if cp.tag_list %}
+                                        <span class="badge-topic">{{ cp.tag_list[0].name }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                    {% else %}
+                        <div class="no-problems-notice">
+                            <p>{{ _("No problems have been published for this contest yet.") }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </aside>
+
+            <!-- Col 2: Problem Statement Pane -->
+            {% if active_problem %}
+            <section class="contest-statement-pane" id="contest-statement-pane" aria-label="{{ _('Problem Statement') }}">
+                <div class="statement-card-inner">
+                    <!-- Title & Bookmark Row -->
+                    <div class="statement-title-bar">
+                        <h2 class="statement-problem-title">
+                            <span class="problem-letter-prefix">{{ active_cp.letter }}.</span>
+                            {{ active_problem.name }}
+                        </h2>
+                        <button type="button" class="btn-star-bookmark" id="btn-star-bookmark" title="{{ _('Bookmark problem') }}">
+                            <i class="fa fa-star-o"></i>
+                        </button>
+                    </div>
+
+                    <!-- Meta Badges Pill Row -->
+                    <div class="statement-meta-pills">
+                        <span class="meta-pill pill-points">{{ active_cp.points|int }} {{ _("points") }}</span>
+                        <span class="meta-pill pill-time"><i class="fa fa-clock-o"></i> {{ active_problem.time_limit }} s</span>
+                        <span class="meta-pill pill-memory"><i class="fa fa-microchip"></i> {{ (active_problem.memory_limit / 1024)|int }} MB</span>
+                        {% for t in active_cp.tag_list %}
+                            <span class="meta-pill pill-tag">{{ t.name }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Markdown & KaTeX Statement Body -->
+                    <div class="statement-body-markdown" id="statement-body-markdown">
+                        {% cache 86400 'contest_problem_html' active_problem.id MATH_ENGINE LANGUAGE_CODE %}
+                            {{ active_problem.description|markdown(active_problem.markdown_style, MATH_ENGINE)|reference|str|safe }}
+                        {% endcache %}
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Col 3: Coding Workspace & Testcases Console -->
+            <section class="contest-editor-pane" id="contest-editor-pane" aria-label="{{ _('Code Editor') }}">
+                <!-- Editor Toolbar -->
+                <div class="editor-header-bar">
+                    <div class="editor-tools-left">
+                        <div class="language-select-wrap">
+                            <select id="contest-language-select" class="contest-language-select" aria-label="{{ _('Select Language') }}">
+                                {% for lang in languages %}
+                                    <option value="{{ lang.key }}"
+                                            data-ace="{{ lang.ace }}"
+                                            {% if default_language and default_language.key == lang.key %}selected{% endif %}>
+                                        {{ lang.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <i class="fa fa-angle-down select-caret"></i>
+                        </div>
+                        <button type="button" class="btn-editor-tool" id="btn-editor-settings" title="{{ _('Editor Settings') }}">
+                            <i class="fa fa-cog"></i>
+                        </button>
+                    </div>
+
+                    <div class="editor-tools-right">
+                        {% if active_problem %}
+                        <form id="contest-submit-form"
+                              action="{{ url('problem_submit', active_problem.code) }}"
+                              method="POST"
+                              class="submit-form-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="language" id="form-language-input" value="{{ default_language.key if default_language else 'PY3' }}">
+                            <textarea name="source" id="form-source-textarea" style="display:none;"></textarea>
+
+                            <button type="button" class="btn-workspace-submit" id="btn-contest-submit">
+                                <i class="fa fa-paper-plane"></i>
+                                <span>{{ _("Submit") }}</span>
+                                <span class="shortcut-label">(Ctrl+Enter)</span>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Ace Code Editor -->
+                <div class="editor-ace-wrapper">
+                    <div id="contest-ace-editor" class="contest-ace-editor"></div>
+                </div>
+
+                <!-- Bottom Testcases / Console Area (Mockup 5.png) -->
+                <div class="editor-console-drawer" id="editor-console-drawer">
+                    <div class="console-tabs-bar">
+                        <div class="console-tabs-left">
+                            <button type="button" class="console-tab-item active" data-tab="testcases">
+                                {{ _("Test Cases") }}
+                            </button>
+                            <button type="button" class="console-tab-item" data-tab="submissions">
+                                {{ _("Submissions") }}
+                            </button>
+                            <button type="button" class="console-tab-item" data-tab="output">
+                                {{ _("Output") }}
+                            </button>
+                        </div>
+                        <div class="console-tabs-right">
+                            <div class="sample-tests-dropdown">
+                                <button type="button" class="btn-sample-dropdown" id="btn-sample-dropdown">
+                                    {{ _("Sample Tests") }} <i class="fa fa-angle-down"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Testcases Tab Content -->
+                    <div class="console-panel active" id="panel-testcases">
+                        <div class="sample-test-rows">
+                            <!-- Sample 1 -->
+                            <div class="sample-test-row">
+                                <div class="test-row-header">
+                                    <span class="test-name"><i class="fa fa-angle-right"></i> {{ _("Sample Test 1") }}</span>
+                                    <div class="test-meta-stats">
+                                        <span class="test-verdict-badge verdict-ac">{{ _("AC") }}</span>
+                                        <span class="test-time">3 ms</span>
+                                        <span class="test-mem">1.2 MB</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Sample 2 -->
+                            <div class="sample-test-row">
+                                <div class="test-row-header">
+                                    <span class="test-name"><i class="fa fa-angle-right"></i> {{ _("Sample Test 2") }}</span>
+                                    <div class="test-meta-stats">
+                                        <span class="test-verdict-badge verdict-ac">{{ _("AC") }}</span>
+                                        <span class="test-time">2 ms</span>
+                                        <span class="test-mem">1.1 MB</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Sample 3 -->
+                            <div class="sample-test-row">
+                                <div class="test-row-header">
+                                    <span class="test-name"><i class="fa fa-angle-right"></i> {{ _("Sample Test 3") }}</span>
+                                    <div class="test-meta-stats">
+                                        <span class="test-verdict-badge verdict-ac">{{ _("AC") }}</span>
+                                        <span class="test-time">3 ms</span>
+                                        <span class="test-mem">1.3 MB</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submissions Tab Content -->
+                    <div class="console-panel" id="panel-submissions" style="display:none;">
+                        <div class="console-empty-state">
+                            <p>{{ _("No recent submissions for this problem in this session.") }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Output Tab Content -->
+                    <div class="console-panel" id="panel-output" style="display:none;">
+                        <pre class="console-log-output">Ready to execute.</pre>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- 4. Clarifications & Community Discussions Panel (Hidden by default, toggled via Clarifications tab) -->
+    <section class="contest-clarifications-panel" id="contest-clarifications-panel" style="display:none;">
+        <div class="clarifications-card">
+            <div class="clarifications-header">
+                <h2><i class="fa fa-comments-o"></i> {{ _("Contest Clarifications & Discussion") }}</h2>
+                <button type="button" class="btn-close-clarifications" id="btn-close-clarifications">&times;</button>
+            </div>
+            <div class="clarifications-content">
+                <div class="contest-rules-summary">
+                    <h3>{{ _("Contest Information") }}</h3>
+                    <p>{{ contest.description|markdown('contest', MATH_ENGINE)|reference|str|safe }}</p>
+                </div>
+                {% if enable_comments %}
+                    <div class="comments-section">
+                        {% include "comments/list.html" %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+</div>
 {% endblock %}
 
-{% block description_end %}{% endblock %}
+{% block bodyend %}
+    {% include "katex-load.html" %}
+{% endblock %}
