@@ -1,0 +1,218 @@
+@forward "vars-common";
+
+// ============================================================================
+// VCODER macOS Design System Tokens & Semantic CSS Variables
+// Milestone 2 — Design System & SCSS Compilation Pipeline
+// ============================================================================
+
+:root {
+  /* --- Desktop & Shell Surfaces --- */
+  --color-bg-desktop: #2B6CB0;
+  --color-bg-desktop-gradient: radial-gradient(circle at 50% 20%, #4299E1 0%, #2B6CB0 60%, #1A365D 100%);
+  --color-bg-app: #FFFFFF;
+  --color-bg-sidebar: #FAFAFA;
+  --color-bg-card: #FFFFFF;
+  --color-bg-card-subtle: #F9FAFB;
+  --color-bg-input: #F3F4F6;
+  --color-bg-code: #F8FAFC;
+  --color-bg-hover: #F3F4F6;
+  --color-bg-active: #FFF7ED;
+
+  /* --- Brand / Primary Palette (Warm Orange) --- */
+  --color-primary: #F97316;
+  --color-primary-hover: #EA580C;
+  --color-primary-active: #C2410C;
+  --color-primary-subtle: #FED7AA;
+  --color-primary-bg: #FFF7ED;
+  --color-primary-border: #FDBA74;
+
+  /* --- Neutral Text Scale --- */
+  --color-text-main: #111827;      /* Primary headings & text */
+  --color-text-secondary: #4B5563; /* Body & menu text */
+  --color-text-muted: #6B7280;     /* Subtitles & metadata */
+  --color-text-subtle: #9CA3AF;    /* Placeholders & disabled */
+  --color-text-inverse: #FFFFFF;   /* Button text & dark chips */
+
+  /* --- Borders & Dividers --- */
+  --color-border-subtle: #F3F4F6;
+  --color-border: #E5E7EB;
+  --color-border-strong: #D1D5DB;
+  --color-border-focus: #F97316;
+
+  /* --- Verdict & Functional Status Colors --- */
+  /* Accepted (AC) / Solved / Success */
+  --color-success: #10B981;
+  --color-success-bg: #ECFDF5;
+  --color-success-text: #059669;
+  --color-success-border: #A7F3D0;
+
+  /* Wrong Answer (WA) / Danger / Error */
+  --color-danger: #EF4444;
+  --color-danger-bg: #FEF2F2;
+  --color-danger-text: #DC2626;
+  --color-danger-active: #B91C1C;
+  --color-danger-border: #FECACA;
+
+  /* Time Limit Exceeded (TLE) / Memory Limit (MLE) / Warning */
+  --color-warning: #F59E0B;
+  --color-warning-bg: #FFFBEB;
+  --color-warning-text: #D97706;
+  --color-warning-border: #FDE68A;
+
+  /* Runtime Error (RTE) / Purple */
+  --color-error-runtime: #8B5CF6;
+  --color-error-runtime-bg: #F5F3FF;
+  --color-error-runtime-text: #7C3AED;
+  --color-error-runtime-border: #DDD6FE;
+
+  /* Compilation Error (CE) / Deep Violet */
+  --color-error-compile: #7C3AED;
+  --color-error-compile-bg: #EDE9FE;
+  --color-error-compile-text: #6D28D9;
+  --color-error-compile-border: #C4B5FD;
+
+  /* Info / Rated Badges / Sky Blue */
+  --color-info: #3B82F6;
+  --color-info-bg: #EFF6FF;
+  --color-info-text: #2563EB;
+  --color-info-border: #BFDBFE;
+
+  /* --- Tag Category Badges --- */
+  --badge-math-bg: #EFF6FF;
+  --badge-math-text: #2563EB;
+  --badge-impl-bg: #F5F3FF;
+  --badge-impl-text: #7C3AED;
+  --badge-strings-bg: #FFF7ED;
+  --badge-strings-text: #EA580C;
+  --badge-nt-bg: #FDF2F8;
+  --badge-nt-text: #DB2777;
+  --badge-graphs-bg: #ECFDF5;
+  --badge-graphs-text: #059669;
+  --badge-dp-bg: #FDF2F8;
+  --badge-dp-text: #E11D48;
+  --badge-greedy-bg: #F5F3FF;
+  --badge-greedy-text: #6D28D9;
+
+  /* --- macOS Window Controls --- */
+  --traffic-close: #FF5F56;
+  --traffic-minimize: #FFBD2E;
+  --traffic-maximize: #27C93F;
+  --traffic-border: rgba(0, 0, 0, 0.12);
+
+  /* --- Radii --- */
+  --radius-window: 18px;
+  --radius-xl: 14px;
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --radius-sm: 6px;
+  --radius-pill: 9999px;
+
+  /* --- Shadows --- */
+  --shadow-window: 0 25px 65px -15px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  --shadow-app: 0 25px 65px -15px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --shadow-card-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-drawer: -8px 0 24px -4px rgba(0, 0, 0, 0.1);
+  --shadow-dropdown: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+
+  /* --- Layout Metrics --- */
+  --shell-max-width: 1560px;
+  --shell-sidebar-width: 200px;
+  --shell-topbar-height: 56px;
+
+  /* --- Typography Font Stacks --- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", "Fira Code", "Cascadia Code", Menlo, Monaco, Consolas, monospace;
+}
+
+// Dark Theme Overrides
+[data-theme="dark"], body.theme-dark {
+  --color-bg-app: #18181B;
+  --color-bg-sidebar: #121214;
+  --color-bg-card: #27272A;
+  --color-bg-card-subtle: #1F1F23;
+  --color-bg-input: #27272A;
+  --color-bg-code: #09090B;
+  --color-bg-hover: #27272A;
+  --color-bg-active: #382415;
+  --color-text-main: #F4F4F5;
+  --color-text-secondary: #D4D4D8;
+  --color-text-muted: #A1A1AA;
+  --color-text-subtle: #71717A;
+  --color-border-subtle: #27272A;
+  --color-border: #3F3F46;
+  --color-border-strong: #52525B;
+  --shadow-window: 0 25px 65px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  --shadow-app: 0 25px 65px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+// ============================================================================
+// DMOJ Upstream SCSS Compatibility Variables (Light Theme Baseline)
+// ============================================================================
+
+$is_light_theme: true;
+
+$color_primary0: #FFFFFF;
+$color_primary5: #F9FAFB;   // light card background
+$color_primary10: #F3F4F6;  // input / subtle background
+$color_primary25: #E5E7EB;  // border
+$color_primary33: #D1D5DB;  // widget border / divider
+$color_primary50: #6B7280;  // muted text
+$color_primary66: #4B5563;  // secondary text / tabs
+$color_primary75: #374151;  // widget headings
+$color_primary90: #1F2937;
+$color_primary100: #111827; // main text
+
+$color_link50: #FB923C;
+$color_link75: #F97316;     // warm orange brand link
+$color_link100: #EA580C;    // link hover
+$color_link200: #C2410C;    // link active
+
+$color_pageBg: #FFFFFF;
+
+// Upstream DMOJ blue override -> warm orange brand primary
+$highlight_blue: #F97316;
+
+// Custom one-off colours
+$color_base_description_blockquote: #F3F4F6;
+$color_contest_ranking_disqualified: #FECACA;
+$color_martor_resize_dragger: #E5E7EB;
+
+// Competitive Programming Rating scale (matches CF / DMOJ)
+$color_rating_none: #9CA3AF;
+$color_rating_newbie: #9CA3AF;
+$color_rating_amateur: #10B981;
+$color_rating_expert: #3B82F6;
+$color_rating_candidate_master: #8B5CF6;
+$color_rating_master: #F59E0B;
+$color_rating_grandmaster: #EF4444;
+$color_rating_target: #B91C1C;
+
+$color_select2_search_dropdown: $color_primary0;
+
+// User submission activity heat-map (warm orange progression)
+$color_user_submission_activity0: #F3F4F6;
+$color_user_submission_activity1: #FED7AA;
+$color_user_submission_activity2: #FB923C;
+$color_user_submission_activity3: #F97316;
+$color_user_submission_activity4: #C2410C;
+
+// Status & feedback semantic colors
+$color_info25: #EFF6FF;
+$color_info50: #BFDBFE;
+$color_info100: #2563EB;
+$color_success25: #ECFDF5;
+$color_success50: #A7F3D0;
+$color_success100: #059669;
+$color_warning25: #FFFBEB;
+$color_warning50: #FDE68A;
+$color_warning100: #D97706;
+$color_danger25: #FEF2F2;
+$color_danger50: #FECACA;
+$color_danger100: #DC2626;
+
+$color_problem_submit_select2: #4B5563;
+
+$path_to_root: '.';
+
+@mixin vars-img {}

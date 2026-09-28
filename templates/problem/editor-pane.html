@@ -1,0 +1,260 @@
+<section class="workspace-pane editor-pane" id="editor-pane" aria-label="{{ _('Coding Workspace') }}">
+
+    <!-- Top Action Toolbar -->
+    <div class="editor-action-toolbar" id="editor-action-toolbar">
+        <div class="toolbar-left">
+            <!-- Custom Language Dropdown -->
+            <div class="lang-selector-wrap" id="lang-selector-wrap">
+                <button type="button" class="lang-trigger-btn" id="lang-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="lang-brand-icon"><i class="fa fa-code" id="lang-icon"></i></span>
+                    <span class="lang-display-name" id="current-lang-name">
+                        {% if default_lang %}{{ default_lang.name }}{% elif usable_languages and usable_languages[0] %}{{ usable_languages[0].name }}{% else %}{{ _('Select Language') }}{% endif %}
+                    </span>
+                    <i class="fa fa-chevron-down caret-icon" aria-hidden="true"></i>
+                </button>
+
+                <div class="lang-dropdown-menu" id="lang-dropdown-menu" role="listbox" style="display: none;">
+                    <div class="lang-search-wrap">
+                        <i class="fa fa-search lang-search-icon"></i>
+                        <input type="text" class="lang-search-input" id="lang-search-input" placeholder="{{ _('Filter languages...') }}" autocomplete="off">
+                    </div>
+                    <ul class="lang-options-list" id="lang-options-list">
+                        {% for lang in usable_languages %}
+                            <li class="lang-option-item{% if default_lang and lang.id == default_lang.id %} selected{% endif %}"
+                                role="option"
+                                data-id="{{ lang.id }}"
+                                data-name="{{ lang.name }}"
+                                data-ace="{{ lang.ace }}"
+                                data-info="{{ lang.info or '' }}"
+                                data-judge-info="{{ runtime_versions(lang.runtime_versions()) if runtime_versions is defined else '' }}"
+                                aria-selected="{% if default_lang and lang.id == default_lang.id %}true{% else %}false{% endif %}">
+                                <span class="lang-opt-name">{{ lang.name }}</span>
+                                {% if lang.info %}
+                                    <span class="lang-opt-version">({{ lang.info }})</span>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="toolbar-right">
+            <!-- Reset Code Button -->
+            <button type="button" class="btn btn-outline btn-reset" id="btn-reset-code" title="{{ _('Reset to starter template') }}">
+                <i class="fa fa-undo" aria-hidden="true"></i>
+                <span>{{ _('Reset') }}</span>
+            </button>
+
+            <!-- Run Code Button -->
+            <button type="button" class="btn btn-outline btn-run" id="btn-run-code" title="{{ _('Run code on testcases') }}">
+                <i class="fa fa-play" aria-hidden="true"></i>
+                <span>{{ _('Run') }}</span>
+            </button>
+
+            <!-- Submit Solution Button (Warm Orange #F97316) -->
+            <button type="button" class="btn btn-primary btn-submit" id="btn-submit-code" title="{{ _('Submit solution for grading') }}">
+                <i class="fa fa-upload" aria-hidden="true"></i>
+                <span>{{ _('Submit') }}</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Ace Code Editor Card -->
+    <div class="ace-editor-card" id="ace-editor-card">
+        <!-- In-Editor Floating Utilities -->
+        <div class="editor-floating-tools">
+            <span class="draft-indicator editor-draft-indicator" id="draft-save-status"><i class="fa fa-check"></i> {{ _('Draft saved') }}</span>
+            <button type="button" class="editor-tool-btn" id="btn-copy-code" title="{{ _('Copy code') }}">
+                <i class="fa fa-clone" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="editor-tool-btn" id="btn-editor-settings" title="{{ _('Editor settings') }}">
+                <i class="fa fa-cog" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="editor-tool-btn" id="btn-fullscreen-code" title="{{ _('Toggle Fullscreen') }}">
+                <i class="fa fa-arrows-alt" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <!-- Submission Form (Synchronized with Ace) -->
+        <form id="problem_submit" action="{{ url('problem_submit', problem.code) }}" method="post" class="editor-form-inner">
+            {% csrf_token %}
+
+            <!-- Hidden native form fields -->
+            <select id="id_language" name="language" style="display: none;">
+                {% for lang in usable_languages %}
+                    <option value="{{ lang.id }}"
+                            data-id="{{ lang.id }}"
+                            data-name="{{ lang.name }}"
+                            data-ace="{{ lang.ace }}"
+                            data-info="{{ lang.info or '' }}"
+                            data-judge-info="{{ runtime_versions(lang.runtime_versions()) if runtime_versions is defined else '' }}"
+                            {% if default_lang and lang.id == default_lang.id %}selected{% endif %}>
+                        {{ lang.name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <textarea id="id_source" name="source" style="display: none;">{{ initial_source|default('') }}</textarea>
+            <input type="hidden" id="id_judge" name="judge" value="">
+
+            <!-- Ace Mount Target -->
+            <div id="ace_source" class="django-ace-widget"
+                 data-mode="{% if default_lang %}{{ default_lang.ace }}{% else %}python{% endif %}"
+                 data-theme="github"
+                 data-wordwrap="true">
+                <div></div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bottom Testcases & Console Area -->
+    <div class="testcase-console workspace-console" id="testcase-console">
+        <!-- Console Tabs Navigation -->
+        <div class="console-nav-bar">
+            <div class="console-tabs" role="tablist">
+                <button type="button" class="console-tab-btn tab-console-testcases active" id="tab-btn-testcases" role="tab" aria-selected="true" data-tab="testcases">
+                    <i class="fa fa-check-square-o"></i> {{ _('Testcases') }}
+                </button>
+                <button type="button" class="console-tab-btn tab-console-submissions" id="tab-btn-submissions" role="tab" aria-selected="false" data-tab="submissions">
+                    <i class="fa fa-history"></i> {{ _('Submissions') }}
+                </button>
+            </div>
+
+            <div class="console-actions">
+                <button type="button" class="btn-add-testcase btn-add-custom-test" id="btn-add-testcase">
+                    <i class="fa fa-plus"></i> <span>{{ _('Add custom test') }}</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Console Content Pane: Testcases -->
+        <div class="console-tab-pane active" id="console-pane-testcases" role="tabpanel">
+            <div class="testcases-list" id="testcases-list">
+                <!-- Testcase 1 (Sample) -->
+                <div class="testcase-row" data-testcase-id="1">
+                    <div class="testcase-main-bar">
+                        <button type="button" class="testcase-toggle-btn" aria-label="Toggle details">
+                            <i class="fa fa-chevron-right toggle-icon"></i>
+                        </button>
+                        <span class="testcase-number">#1</span>
+
+                        <div class="testcase-field-box">
+                            <span class="testcase-field-label">{{ _('Sample Input 1') }}</span>
+                            <input type="text" class="testcase-field-input input-sample-data" value="1 2" spellcheck="false">
+                        </div>
+
+                        <div class="testcase-field-box">
+                            <span class="testcase-field-label">{{ _('Expected Output') }}</span>
+                            <input type="text" class="testcase-field-input expected-sample-data" value="3" spellcheck="false">
+                        </div>
+
+                        <div class="testcase-verdict-slot">
+                            <span class="verdict-pill verdict-ac" id="verdict-pill-1">
+                                <i class="fa fa-check-circle"></i> <span>AC</span>
+                            </span>
+                        </div>
+
+                        <div class="testcase-menu-slot">
+                            <button type="button" class="testcase-dot-menu-btn" title="Options">
+                                <i class="fa fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="testcase-expanded-details" style="display: none;">
+                        <div class="detail-row">
+                            <span class="detail-tag">{{ _('Actual Output:') }}</span>
+                            <code class="actual-output-val">3</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Testcase 2 (Sample) -->
+                <div class="testcase-row" data-testcase-id="2">
+                    <div class="testcase-main-bar">
+                        <button type="button" class="testcase-toggle-btn" aria-label="Toggle details">
+                            <i class="fa fa-chevron-right toggle-icon"></i>
+                        </button>
+                        <span class="testcase-number">#2</span>
+
+                        <div class="testcase-field-box">
+                            <span class="testcase-field-label">{{ _('Sample Input 2') }}</span>
+                            <input type="text" class="testcase-field-input input-sample-data" value="1000000000 1000000000" spellcheck="false">
+                        </div>
+
+                        <div class="testcase-field-box">
+                            <span class="testcase-field-label">{{ _('Expected Output') }}</span>
+                            <input type="text" class="testcase-field-input expected-sample-data" value="2000000000" spellcheck="false">
+                        </div>
+
+                        <div class="testcase-verdict-slot">
+                            <span class="verdict-pill verdict-ac" id="verdict-pill-2">
+                                <i class="fa fa-check-circle"></i> <span>AC</span>
+                            </span>
+                        </div>
+
+                        <div class="testcase-menu-slot">
+                            <button type="button" class="testcase-dot-menu-btn" title="Options">
+                                <i class="fa fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="testcase-expanded-details" style="display: none;">
+                        <div class="detail-row">
+                            <span class="detail-tag">{{ _('Actual Output:') }}</span>
+                            <code class="actual-output-val">2000000000</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Testcase 3 (Custom) -->
+                <div class="testcase-row is-custom-test" data-testcase-id="3">
+                    <div class="testcase-main-bar">
+                        <button type="button" class="testcase-toggle-btn" aria-label="Toggle details">
+                            <i class="fa fa-chevron-right toggle-icon"></i>
+                        </button>
+                        <span class="testcase-number">#3</span>
+
+                        <div class="testcase-field-box">
+                            <span class="testcase-field-label">{{ _('Custom Test') }}</span>
+                            <input type="text" class="testcase-field-input input-sample-data" value="-5 7" spellcheck="false">
+                        </div>
+
+                        <div class="testcase-field-box">
+                            <span class="testcase-field-label">{{ _('Expected Output') }}</span>
+                            <input type="text" class="testcase-field-input expected-sample-data" value="2" spellcheck="false">
+                        </div>
+
+                        <div class="testcase-verdict-slot">
+                            <span class="verdict-pill verdict-ac" id="verdict-pill-3">
+                                <i class="fa fa-check-circle"></i> <span>AC</span>
+                            </span>
+                        </div>
+
+                        <div class="testcase-menu-slot">
+                            <button type="button" class="testcase-remove-btn" title="{{ _('Remove custom test') }}">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="testcase-expanded-details" style="display: none;">
+                        <div class="detail-row">
+                            <span class="detail-tag">{{ _('Actual Output:') }}</span>
+                            <code class="actual-output-val">2</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Console Content Pane: Submissions -->
+        <div class="console-tab-pane" id="console-pane-submissions" role="tabpanel" style="display: none;">
+            <div class="submissions-history-wrap" id="submissions-history-wrap">
+                <div class="submissions-loading"><i class="fa fa-spinner fa-spin"></i> {{ _('Loading your submissions...') }}</div>
+            </div>
+        </div>
+    </div>
+</section>

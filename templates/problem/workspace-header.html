@@ -1,0 +1,99 @@
+<header class="problem-workspace-header" id="problem-header">
+    <div class="header-left">
+        <!-- Breadcrumb Navigation -->
+        <nav class="problem-breadcrumb workspace-breadcrumb" aria-label="{{ _('Breadcrumb') }}">
+            <a href="{{ url('problem_list') }}" class="breadcrumb-link">{{ _('Problems') }}</a>
+            <span class="breadcrumb-sep"><i class="fa fa-angle-right" aria-hidden="true"></i></span>
+            <span class="breadcrumb-current">{{ title }}</span>
+        </nav>
+
+        <!-- Problem Title & Bookmark -->
+        <div class="problem-title-row">
+            <h1 class="problem-title-text workspace-problem-title">{{ title }}</h1>
+            <button type="button"
+                    class="problem-bookmark-btn"
+                    id="problem-bookmark-star"
+                    data-problem-code="{{ problem.code }}"
+                    aria-label="{{ _('Bookmark problem') }}"
+                    title="{{ _('Bookmark problem') }}">
+                <i class="fa fa-star-o star-icon" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <!-- Problem Category Tags -->
+        <div class="problem-tags-row">
+            {% if problem.types_list %}
+                {% for ptype in problem.types_list %}
+                    <span class="problem-tag-pill workspace-tag-pill tag-{{ ptype|slugify }}">{{ ptype }}</span>
+                {% endfor %}
+            {% elif problem.types.all() %}
+                {% for ptype in problem.types.all() %}
+                    <span class="problem-tag-pill workspace-tag-pill tag-{{ ptype.name|slugify }}">{{ ptype.full_name or ptype.name }}</span>
+                {% endfor %}
+            {% else %}
+                <span class="problem-tag-pill workspace-tag-pill tag-default">{{ _('General') }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="header-right">
+        <!-- 5 Metric Cards Grid matching Mockup 2 -->
+        <div class="problem-metrics-grid">
+            <!-- 1. Points Card -->
+            <div class="metric-card metric-points">
+                <div class="metric-header">
+                    <i class="fa fa-code-fork" aria-hidden="true"></i>
+                    <span>{{ _('Points') }}</span>
+                </div>
+                <div class="metric-value">
+                    {% if contest_problem %}
+                        {{ contest_problem.points }}
+                    {% else %}
+                        {{ problem.points|floatformat }}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 2. AC Rate Card with Progress Bar -->
+            <div class="metric-card metric-ac-rate">
+                <div class="metric-header">
+                    <i class="fa fa-pie-chart" aria-hidden="true"></i>
+                    <span>{{ _('AC Rate') }}</span>
+                </div>
+                <div class="metric-value">{{ problem.ac_rate|default(0)|floatformat(1) }}%</div>
+                <div class="metric-progress metric-progress-bar" aria-hidden="true">
+                    <div class="progress-bar-fill ac-rate-fill" style="width: {{ [problem.ac_rate|default(0)|floatformat(0)|int, 100]|min }}%;"></div>
+                </div>
+            </div>
+
+            <!-- 3. Group Card -->
+            <div class="metric-card metric-group">
+                <div class="metric-header">
+                    <i class="fa fa-folder-o" aria-hidden="true"></i>
+                    <span>{{ _('Group') }}</span>
+                </div>
+                <div class="metric-value" title="{{ problem.group.full_name if problem.group else '' }}">
+                    {{ problem.group.name if problem.group else 'DMOJ' }}
+                </div>
+            </div>
+
+            <!-- 4. Time Limit Card -->
+            <div class="metric-card metric-time-limit">
+                <div class="metric-header">
+                    <i class="fa fa-clock-o" aria-hidden="true"></i>
+                    <span>{{ _('Time Limit') }}</span>
+                </div>
+                <div class="metric-value">{{ problem.time_limit }} s</div>
+            </div>
+
+            <!-- 5. Memory Limit Card -->
+            <div class="metric-card metric-memory-limit">
+                <div class="metric-header">
+                    <i class="fa fa-server" aria-hidden="true"></i>
+                    <span>{{ _('Memory Limit') }}</span>
+                </div>
+                <div class="metric-value">{{ problem.memory_limit|kbsimpleformat }}</div>
+            </div>
+        </div>
+    </div>
+</header>

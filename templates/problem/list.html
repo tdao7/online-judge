@@ -1,307 +1,456 @@
 {% extends "common-content.html" %}
 
 {% block media %}
-    <link rel="stylesheet" href="{{ static('libs/nouislider.min.css') }}">
-    <noscript>
-        <style>#category, #types {
-            visibility: visible;
-        }
-        </style>
-    </noscript>
-    {% if not request.in_contest %}
-        <style>
-            #problem-table th {
-                padding: 0;
-            }
-        </style>
-    {% endif %}
-{% endblock %}
-
-{% block js_media %}
-    <script>
-        window.point_start = {{point_start}};
-        window.point_end = {{point_end}};
-        window.point_values = {{point_values|json|safe}};
-    </script>
-    {% compress js %}
-        <script src="{{ static('libs/nouislider.min.js') }}" type="text/javascript"></script>
-        <script>
-            $(function () {
-                var $form = $('form#filter-form');
-                var $search = $('#search');
-                var $category = $('#category');
-
-                function prep_form() {
-                    $search.prop('disabled', !$search.val());
-                    $category.prop('disabled', !$category.val());
-                }
-
-                function clean_submit() {
-                    prep_form();
-                    $form.submit();
-                }
-
-                $category.select2({
-                    theme: '{{ DMOJ_SELECT2_THEME }}'
-                }).css({'visibility': 'visible'}).change(clean_submit);
-                $('#types').select2({
-                    theme: '{{ DMOJ_SELECT2_THEME }}',
-                    multiple: 1, placeholder: {{ _('Filter by type...')|htmltojs }}
-                }).css({'visibility': 'visible'});
-
-                // This is incredibly nasty to do but it's needed because otherwise the select2 steals the focus
-                $search.keypress(function (e) {
-                    if (e.keyCode == 13)
-                        $('#go').click();
-                });
-
-                $('#random').click(function (e) {
-                    var action = $form.attr('action');
-                    $form.attr('action', '{{ url('problem_random') }}').attr('target', '_blank').submit();
-                    $form.attr('action', action).attr('target', '');
-                    e.preventDefault();
-                });
-
-                $('#go').click(clean_submit);
-
-                $('input#full_text, input#hide_solved, input#show_types, input#has_public_editorial').click(function () {
-                    prep_form();
-                    ($('<form>').attr('action', window.location.pathname + '?' + $form.serialize())
-                        .append($('<input>').attr('type', 'hidden').attr('name', 'csrfmiddlewaretoken')
-                            .attr('value', $.cookie('csrftoken')))
-                        .attr('method', 'POST').appendTo($('body')).submit());
-                });
-
-                var info_float = $('.info-float');
-                var container = $('#content-right');
-                if (!featureTest('position', 'sticky')) {
-                    fix_div(info_float, 55);
-                    $(window).resize(function () {
-                        info_float.width(container.width());
-                    });
-                    info_float.width(container.width());
-                }
-
-                var intFormatter = {
-                    to: function (value) {
-                        return value;
-                    },
-                    from: function (value) {
-                        return +value;
-                    }
-                };
-                var $slider = $('#point-slider');
-                if ($slider.length) {
-                    var $start = $('#point-start');
-                    var $end = $('#point-end');
-
-                    noUiSlider.create($slider[0], {
-                        start: [point_start, point_end],
-                        connect: true,
-                        snap: true,
-                        tooltips: [intFormatter, intFormatter],
-                        range: point_values
-                    }).on('change', function (values) {
-                        var start = +values[0], end = +values[1];
-                        $start.prop('disabled', start === point_values.min).val(start);
-                        $end.prop('disabled', end === point_values.max).val(end);
-                    });
-                }
-            });
-        </script>
-    {% endcompress %}
-    {% if request.in_contest %}
-        {% compress js %}
-            <script src="{{ static('libs/tablesorter.js') }}" type="text/javascript"></script>
-            <script type="text/javascript">
-                $(function () {
-                    $.tablesorter.addParser({
-                        id: 'solvedsort',
-                        is: function (s) {
-                            return false;
-                        },
-                        format: function (s, table, cell, cellIndex) {
-                            return $(cell).attr('solved');
-                        },
-                        type: 'numeric'
-                    });
-
-                    $('#problem-table').tablesorter({
-                        headers: {
-                            0: {
-                                sorter: 'solvedsort'
-                            }
-                        },
-                        textExtraction: function (node) {
-                            node = $(node);
-                            var text = node.text().replace(/^\s+|\s+$/g, '');
-                            return (node.hasClass('p') ? text.replace(/p$/, '') : text);
-                        }
-                    });
-                });
-            </script>
-        {% endcompress %}
-    {% endif %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ static('problems-list.css') }}">
 {% endblock %}
 
 {% block title_ruler %}{% endblock %}
 
 {% block title_row %}
-    {% set tab = 'list' %}
-    {% include "problem/problem-list-tabs.html" %}
+    <!-- macOS Catalog Header -->
+    <div class="problems-header">
+        <div class="problems-header-main">
+            <div class="problems-title-row">
+                <h1 class="problems-heading problems-title">{{ _('Problems') }}</h1>
+                <span class="problems-count-badge">{{ paginator.count }} {{ _('problems') }}</span>
+            </div>
+            <p class="problems-subheading">{{ _('Browse and practice programming problems from DMOJ.') }}</p>
+        </div>
+        {% if perms.judge.edit_all_problem or perms.judge.edit_public_problem or perms.judge.edit_own_problem %}
+            <div class="problems-admin-actions">
+                <a href="{{ url('admin:judge_problem_changelist') }}" class="btn-admin-manage" title="{{ _('Admin Problem List') }}">
+                    <i class="fa fa-sliders"></i> {{ _('Admin') }}
+                </a>
+            </div>
+        {% endif %}
+    </div>
 {% endblock %}
 
 {% block body %}
-    {% if page_obj.has_other_pages() %}
-        <div class="top-pagination-bar">{% include "list-pages.html" %}</div>
-    {% endif %}
+<div class="problems-catalog-wrapper" id="problems-catalog">
 
-    <div id="common-content">
-        {% block before_table %}{% endblock %}
-        {% if not request.in_contest %}
-            <div id="content-right" class="problems">
-                <div class="info-float">
-                    {% include "problem/search-form.html" %}
-                    {% if hot_problems %}
-                        <div class="sidebox">
-                            <h3>{{ _('Hot problems') }} <i class="fa fa-fire"></i></h3>
-                            <div class="sidebox-content">
-                                <ul class="problem-list">{% for problem in hot_problems %}
-                                    <li><a href="{{ url('problem_detail', problem.code) }}" class="hot-problem-link">
-                                        {{ problem.name }}
-                                    </a></li>
-                                {% endfor %}</ul>
-                            </div>
-                        </div>
-                    {% endif %}
+    <!-- Filter Controls Row 1: Search & Multi-Dropdowns -->
+    <form id="problems-filter-form" action="{{ url('problem_list') }}" method="GET" class="problems-filter-bar">
+        <!-- Hidden State Inputs -->
+        <input type="hidden" name="status" id="filter-status" value="{{ status_filter|default('all') }}">
+        <input type="hidden" name="order" id="filter-order" value="{{ order|default('code') }}">
+        <input type="hidden" name="difficulty" id="filter-difficulty" value="{{ difficulty or '' }}">
+        <input type="hidden" name="type" id="filter-type" value="{{ selected_types[0] if selected_types else '' }}">
+        <input type="hidden" name="category" id="filter-category" value="{{ category or '' }}">
+        <input type="hidden" name="group" id="filter-group" value="{{ category or '' }}">
+        <input type="hidden" name="points_preset" id="filter-points-preset" value="{{ points_preset or '' }}">
+
+        <div class="filter-left-group">
+            <!-- Quick Search Input -->
+            <div class="problems-search-box">
+                <i class="fa fa-search search-icon" aria-hidden="true"></i>
+                <input type="text"
+                       name="search"
+                       id="search"
+                       class="problems-search-input"
+                       placeholder="{{ _('Search problems...') }}"
+                       value="{{ search_query or '' }}"
+                       autocomplete="off">
+                {% if search_query %}
+                    <button type="button" class="btn-clear-search" id="btn-clear-search" title="{{ _('Clear') }}">
+                        <i class="fa fa-times"></i>
+                    </button>
+                {% endif %}
+            </div>
+
+            <!-- 1. Difficulty Dropdown -->
+            <div class="filter-dropdown" id="dropdown-difficulty">
+                <button type="button" class="filter-dropdown-btn{% if difficulty %} active{% endif %}" aria-haspopup="true">
+                    <span class="dropdown-btn-text">
+                        {% if difficulty == 'easy' %}{{ _('Difficulty: Easy') }}
+                        {% elif difficulty == 'medium' %}{{ _('Difficulty: Medium') }}
+                        {% elif difficulty == 'hard' %}{{ _('Difficulty: Hard') }}
+                        {% else %}{{ _('Difficulty') }}{% endif %}
+                    </span>
+                    <i class="fa fa-chevron-down chevron-icon"></i>
+                </button>
+                <div class="filter-dropdown-menu">
+                    <div class="dropdown-item{% if not difficulty %} active{% endif %}" data-filter="difficulty" data-value="">
+                        {{ _('All Difficulties') }}
+                    </div>
+                    <div class="dropdown-item{% if difficulty == 'easy' %} active{% endif %}" data-filter="difficulty" data-value="easy">
+                        <span class="diff-indicator diff-easy"></span> {{ _('Easy (1–10 pts)') }}
+                    </div>
+                    <div class="dropdown-item{% if difficulty == 'medium' %} active{% endif %}" data-filter="difficulty" data-value="medium">
+                        <span class="diff-indicator diff-medium"></span> {{ _('Medium (11–30 pts)') }}
+                    </div>
+                    <div class="dropdown-item{% if difficulty == 'hard' %} active{% endif %}" data-filter="difficulty" data-value="hard">
+                        <span class="diff-indicator diff-hard"></span> {{ _('Hard (30+ pts)') }}
+                    </div>
                 </div>
             </div>
-        {% endif %}
-        <div id="content-left" class="problems h-scrollable-table">
-            <table id="problem-table" class="table striped">
+
+            <!-- 2. Type Dropdown -->
+            <div class="filter-dropdown" id="dropdown-type">
+                <button type="button" class="filter-dropdown-btn{% if selected_types %} active{% endif %}" aria-haspopup="true">
+                    <span class="dropdown-btn-text">
+                        {% if selected_types %}
+                            {% for pt in problem_types %}{% if pt.id in selected_types %}{{ pt.full_name }}{% endif %}{% endfor %}
+                        {% else %}
+                            {{ _('Type') }}
+                        {% endif %}
+                    </span>
+                    <i class="fa fa-chevron-down chevron-icon"></i>
+                </button>
+                <div class="filter-dropdown-menu menu-scrollable">
+                    <div class="dropdown-item{% if not selected_types %} active{% endif %}" data-filter="type" data-value="">
+                        {{ _('All Types') }}
+                    </div>
+                    {% for pt in problem_types %}
+                        <div class="dropdown-item{% if pt.id in selected_types %} active{% endif %}" data-filter="type" data-value="{{ pt.id }}">
+                            {{ pt.full_name }}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 3. Group Dropdown -->
+            <div class="filter-dropdown" id="dropdown-group">
+                <button type="button" class="filter-dropdown-btn{% if category %} active{% endif %}" aria-haspopup="true">
+                    <span class="dropdown-btn-text">
+                        {% if category %}
+                            {% for g in categories %}{% if g.id == category %}{{ g.full_name }}{% endif %}{% endfor %}
+                        {% else %}
+                            {{ _('Group') }}
+                        {% endif %}
+                    </span>
+                    <i class="fa fa-chevron-down chevron-icon"></i>
+                </button>
+                <div class="filter-dropdown-menu menu-scrollable">
+                    <div class="dropdown-item{% if not category %} active{% endif %}" data-filter="category" data-value="">
+                        {{ _('All Groups') }}
+                    </div>
+                    {% for group in categories %}
+                        <div class="dropdown-item{% if group.id == category %} active{% endif %}" data-filter="category" data-value="{{ group.id }}">
+                            {{ group.full_name }}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 4. Tags Dropdown -->
+            <div class="filter-dropdown" id="dropdown-tags">
+                <button type="button" class="filter-dropdown-btn{% if selected_types %} active{% endif %}" aria-haspopup="true">
+                    <span class="dropdown-btn-text">{{ _('Tags') }}</span>
+                    <i class="fa fa-chevron-down chevron-icon"></i>
+                </button>
+                <div class="filter-dropdown-menu menu-scrollable tag-picker-menu">
+                    <div class="tag-search-container">
+                        <input type="text" class="tag-search-input" id="tag-filter-search" placeholder="{{ _('Filter tags...') }}">
+                    </div>
+                    <div class="tags-checkbox-list" id="tags-list">
+                        {% for pt in problem_types %}
+                            <label class="tag-checkbox-item">
+                                <input type="checkbox" name="type" value="{{ pt.id }}" {% if pt.id in selected_types %}checked{% endif %}>
+                                <span>{{ pt.full_name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                    <div class="dropdown-footer">
+                        <button type="submit" class="btn-apply-filters">{{ _('Apply') }}</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Points Dropdown -->
+            <div class="filter-dropdown" id="dropdown-points">
+                <button type="button" class="filter-dropdown-btn{% if points_preset %} active{% endif %}" aria-haspopup="true">
+                    <span class="dropdown-btn-text">
+                        {% if points_preset %}{{ points_preset }} {{ _('pts') }}
+                        {% else %}{{ _('Points') }}{% endif %}
+                    </span>
+                    <i class="fa fa-chevron-down chevron-icon"></i>
+                </button>
+                <div class="filter-dropdown-menu">
+                    <div class="dropdown-item{% if not points_preset %} active{% endif %}" data-filter="points_preset" data-value="">
+                        {{ _('All Points') }}
+                    </div>
+                    <div class="dropdown-item{% if points_preset == '1-10' %} active{% endif %}" data-filter="points_preset" data-value="1-10">
+                        1 – 10 {{ _('Points') }}
+                    </div>
+                    <div class="dropdown-item{% if points_preset == '11-25' %} active{% endif %}" data-filter="points_preset" data-value="11-25">
+                        11 – 25 {{ _('Points') }}
+                    </div>
+                    <div class="dropdown-item{% if points_preset == '26-50' %} active{% endif %}" data-filter="points_preset" data-value="26-50">
+                        26 – 50 {{ _('Points') }}
+                    </div>
+                    <div class="dropdown-item{% if points_preset == '50+' %} active{% endif %}" data-filter="points_preset" data-value="50+">
+                        50+ {{ _('Points') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-right-group">
+            <!-- Sort By Dropdown -->
+            <div class="filter-dropdown sort-dropdown" id="dropdown-sort">
+                <button type="button" class="filter-dropdown-btn" aria-haspopup="true">
+                    <span class="sort-prefix">{{ _('Sort by:') }}</span>
+                    <span class="sort-value">
+                        {% if current_sort == 'name' %}{{ _('Name') }}
+                        {% elif current_sort == 'points' %}{{ _('Points') }}
+                        {% elif current_sort == 'ac_rate' %}{{ _('AC Rate') }}
+                        {% elif current_sort == 'user_count' %}{{ _('Solved Count') }}
+                        {% elif current_sort == 'group' %}{{ _('Group') }}
+                        {% else %}{{ _('Default') }}{% endif %}
+                    </span>
+                    <i class="fa fa-chevron-down chevron-icon"></i>
+                </button>
+                <div class="filter-dropdown-menu">
+                    <div class="dropdown-item{% if current_sort == 'code' or not current_sort %} active{% endif %}" data-sort="code">
+                        {{ _('Default') }}
+                    </div>
+                    <div class="dropdown-item{% if current_sort == 'name' %} active{% endif %}" data-sort="name">
+                        {{ _('Problem Name (A-Z)') }}
+                    </div>
+                    <div class="dropdown-item{% if current_sort == 'points' %} active{% endif %}" data-sort="points">
+                        {{ _('Points') }}
+                    </div>
+                    <div class="dropdown-item{% if current_sort == 'ac_rate' %} active{% endif %}" data-sort="ac_rate">
+                        {{ _('AC Rate') }}
+                    </div>
+                    <div class="dropdown-item{% if current_sort == 'user_count' %} active{% endif %}" data-sort="user_count">
+                        {{ _('Solved Count') }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sort Direction Toggle Button (⇅) -->
+            <button type="button"
+                    class="btn-sort-toggle btn-sort-order"
+                    id="btn-sort-toggle"
+                    title="{{ _('Toggle Sort Direction') }}"
+                    aria-label="{{ _('Toggle Sort Direction') }}">
+                <i class="fa fa-arrows-v"></i>
+            </button>
+        </div>
+    </form>
+
+    <!-- Filter Controls Row 2: Quick Filter Pills & Pagination Counter -->
+    <div class="problems-subbar">
+        <!-- Segmented Quick Filter Pills -->
+        <div class="quick-filter-pills" role="tablist">
+            <button type="button"
+                    class="pill-tab-item filter-pill{% if not status_filter or status_filter == 'all' %} active{% endif %}"
+                    data-status="all"
+                    data-filter="all">
+                {{ _('All Problems') }}
+            </button>
+            <button type="button"
+                    class="pill-tab-item filter-pill{% if status_filter == 'bookmarked' %} active{% endif %}"
+                    data-status="bookmarked"
+                    data-filter="bookmarked"
+                    id="pill-bookmarked">
+                <i class="fa fa-star-o"></i> {{ _('Bookmarked') }}
+                <span class="bookmark-count-badge" id="bookmark-count-badge" style="display:none">0</span>
+            </button>
+            <button type="button"
+                    class="pill-tab-item filter-pill{% if status_filter == 'solved' %} active{% endif %}"
+                    data-status="solved"
+                    data-filter="solved">
+                <i class="fa fa-check-square-o"></i> {{ _('Solved') }}
+            </button>
+            <button type="button"
+                    class="pill-tab-item filter-pill{% if status_filter == 'unsolved' or hide_solved %} active{% endif %}"
+                    data-status="unsolved"
+                    data-filter="unsolved">
+                <i class="fa fa-circle-o"></i> {{ _('Unsolved') }}
+            </button>
+        </div>
+
+        <!-- Pagination Counter & Arrow Controls -->
+        <div class="problems-pagination-summary">
+            <span class="pagination-summary-text">
+                {{ page_obj.start_index() }}–{{ page_obj.end_index() }} of {{ paginator.count }} {{ _('problems') }}
+            </span>
+            <div class="pagination-arrows">
+                {% if page_obj.has_previous() %}
+                    <a href="{{ page_prefix or '' }}{{ page_obj.previous_page_number() }}{{ page_suffix or '' }}"
+                       class="pagination-arrow-btn"
+                       title="{{ _('Previous Page') }}"
+                       aria-label="{{ _('Previous Page') }}">
+                        <i class="fa fa-chevron-left"></i>
+                    </a>
+                {% else %}
+                    <span class="pagination-arrow-btn disabled" aria-disabled="true">
+                        <i class="fa fa-chevron-left"></i>
+                    </span>
+                {% endif %}
+
+                {% if page_obj.has_next() %}
+                    <a href="{{ page_prefix or '' }}{{ page_obj.next_page_number() }}{{ page_suffix or '' }}"
+                       class="pagination-arrow-btn"
+                       title="{{ _('Next Page') }}"
+                       aria-label="{{ _('Next Page') }}">
+                        <i class="fa fa-chevron-right"></i>
+                    </a>
+                {% else %}
+                    <span class="pagination-arrow-btn disabled" aria-disabled="true">
+                        <i class="fa fa-chevron-right"></i>
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Problems Table Card -->
+    <div class="problems-table-card">
+        <div class="table-responsive">
+            <table id="problems-table" class="problems-table">
                 <thead>
-                <tr>
-                    {% if request.in_contest %}
-                        {% if request.user.is_authenticated %}
-                            <th class="solved"><i class="fa fa-check"></i></th>
-                        {% endif %}
-                        <th class="problem">{{ _('Problem') }}</th>
-                        <th class="category">{{ _('Category') }}</th>
-                        {% if show_types %}
-                            <th>{{ _('Types') }}</th>
-                        {% endif %}
-                        <th class="points">{{ _('Points') }}</th>
-                        <th class="users">{{ _('Users') }}</th>
-                    {% else %}
-                        {% if request.user.is_authenticated %}
-                            <th class="solved">
-                                <a href="{{ sort_links.solved }}">
-                                    <i class="fa fa-check"></i>{{ sort_order.solved }}
-                                </a>
-                            </th>
-                        {% endif %}
-                        <th class="problem">
-                            <a href="{{ sort_links.name }}">{{ _('Problem') }}{{ sort_order.name }}</a>
-                        </th>
-                        <th class="category">
-                            <a href="{{ sort_links.group }}">{{ _('Category') }}{{ sort_order.group }}</a>
-                        </th>
-                        {% if show_types %}
-                            <th class="types">
-                                <a href="{{ sort_links.type }}">{{ _('Types') }}{{ sort_order.type }}</a>
-                            </th>
-                        {% endif %}
-                        <th class="points">
-                            <a href="{{ sort_links.points }}">{{ _('Points') }}{{ sort_order.points }}</a>
-                        </th>
-                        <th class="ac-rate">
-                            <a href="{{ sort_links.ac_rate }}">{{ _('AC %%') }}{{ sort_order.ac_rate }}</a>
-                        </th>
-                        <th class="editorial" title="{{ _('Editorial') }}">
-                            <a href="{{ sort_links.editorial }}">
-                                <i class="fa fa-book"></i>{{ sort_order.editorial }}
-                            </a>
-                        </th>
-                        <th class="users">
-                            <a href="{{ sort_links.user_count }}">{{ _('Users') }}{{ sort_order.user_count }}</a>
-                        </th>
-                    {% endif %}
-                </tr>
+                    <tr>
+                        <th class="col-star"><i class="fa fa-star-o header-star-icon"></i></th>
+                        <th class="col-index">#</th>
+                        <th class="col-problem">{{ _('Problem') }}</th>
+                        <th class="col-group">{{ _('Group') }}</th>
+                        <th class="col-points">{{ _('Points') }}</th>
+                        <th class="col-ac-rate">{{ _('AC Rate') }}</th>
+                        <th class="col-status">{{ _('Status') }}</th>
+                        <th class="col-actions"></th>
+                    </tr>
                 </thead>
                 <tbody>
-                {% for problem in problems %}
-                    <tr>
-                        {% if request.user.is_authenticated %}
-                            {% if problem.id in completed_problem_ids %}
-                                <td solved="1">
-                                    <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                                        {% if problem.is_public or request.in_contest %}
-                                            <i class="solved-problem-color fa fa-check-circle"></i>
-                                        {% else %}
-                                            <i class="solved-problem-color fa fa-lock"></i>
-                                        {% endif %}
+                    {% for problem in problems %}
+                        <tr class="problem-row" data-code="{{ problem.code }}" data-id="{{ problem.id }}">
+                            <!-- Bookmark Star -->
+                            <td class="col-star">
+                                <button type="button"
+                                        class="btn-star btn-bookmark-row"
+                                        data-code="{{ problem.code }}"
+                                        title="{{ _('Bookmark problem') }}"
+                                        aria-label="{{ _('Bookmark problem') }}">
+                                    <i class="fa fa-star-o"></i>
+                                </button>
+                            </td>
+
+                            <!-- Row Index # -->
+                            <td class="col-index">
+                                <span class="row-num">{{ (page_obj.number - 1) * page_obj.paginator.per_page + loop.index }}</span>
+                            </td>
+
+                            <!-- Problem Title & Tag Pills -->
+                            <td class="col-problem">
+                                <div class="problem-cell-content problem-title-cell">
+                                    <a href="{{ url('problem_detail', problem.code) }}" class="problem-title-link">
+                                        {{ problem.i18n_name or problem.name }}
                                     </a>
-                                </td>
-                            {% elif problem.id in attempted_problems %}
-                                <td solved="0">
-                                    <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                                        {% if problem.is_public or request.in_contest %}
-                                            <i class="attempted-problem-color fa fa-minus-circle"></i>
-                                        {% else %}
-                                            <i class="attempted-problem-color fa fa-lock"></i>
+                                    <div class="problem-tags-wrap problem-tags">
+                                        {% if problem.types_list %}
+                                            {% for type in problem.types_list %}
+                                                <span class="problem-tag-pill tag-pill tag-{{ type|slugify }}">{{ type }}</span>
+                                            {% endfor %}
                                         {% endif %}
-                                    </a>
-                                </td>
-                            {% else %}
-                                <td solved="-1">
-                                    {% if problem.is_public or request.in_contest %}
-                                        <i class="unsolved-problem-color fa fa-minus-circle"></i>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Group Column -->
+                            <td class="col-group">
+                                <span class="group-text badge-group">{{ problem.group.full_name or problem.group.name if problem.group else '' }}</span>
+                            </td>
+
+                            <!-- Points Column -->
+                            <td class="col-points">
+                                <strong class="points-val problem-points-val">{{ problem.points|floatformat }}</strong>{% if problem.partial %}<span class="partial-flag">p</span>{% endif %}
+                            </td>
+
+                            <!-- Acceptance Rate & Progress Bar -->
+                            <td class="col-ac-rate">
+                                <div class="ac-rate-wrapper ac-rate-bar-container">
+                                    <span class="ac-rate-pct ac-rate-percent">{{ problem.ac_rate|default(0)|floatformat(1) }}%</span>
+                                    <div class="ac-rate-track" role="progressbar" aria-valuenow="{{ problem.ac_rate|default(0)|floatformat(1) }}" aria-valuemin="0" aria-valuemax="100">
+                                        <div class="ac-rate-fill" style="width: {{ [problem.ac_rate|default(0)|floatformat(0)|int, 100]|min }}%;"></div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Status Badge Pill -->
+                            <td class="col-status">
+                                {% if request.user.is_authenticated %}
+                                    {% if problem.id in completed_problem_ids %}
+                                        <span class="status-badge status-pill status-solved">
+                                            <i class="fa fa-check-circle"></i> {{ _('Solved') }}
+                                        </span>
+                                    {% elif problem.id in attempted_problems %}
+                                        <span class="status-badge status-pill status-attempted">
+                                            <i class="fa fa-minus-circle"></i> {{ _('Attempted') }}
+                                        </span>
                                     {% else %}
-                                        <i class="unsolved-problem-color fa fa-lock"></i>
+                                        <span class="status-badge status-pill status-unsolved">
+                                            <i class="fa fa-circle-o"></i> {{ _('Unsolved') }}
+                                        </span>
                                     {% endif %}
-                                </td>
-                            {% endif %}
-                        {% endif %}
-                        <td class="problem">
-                            <a href="{{ url('problem_detail', problem.code) }}">{{ problem.i18n_name or problem.name }}</a>
-                        </td>
-                        <td class="category">{{ problem.group.full_name }}</td>
-                        {% if show_types %}
-                            <td class="types">
-                                {% for type in problem.types_list %}
-                                    <span class="type-tag">{{ type }}</span>{% if not loop.last %}, {% endif %}
-                                {% endfor %}
-                            </td>
-                        {% endif %}
-                        <td class="p">{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>
-                        {% if not request.in_contest %}
-                            <td class="ac-rate">{{ problem.ac_rate|floatformat(1) }}%</td>
-                            <td>
-                                {% if problem.has_public_editorial %}
-                                    <a href="{{ url('problem_editorial', problem.code) }}">
-                                        <i class="has-editorial-color fa fa-check-circle"></i>
-                                    </a>
                                 {% else %}
-                                    <i class="no-editorial-color fa fa-minus-circle"></i>
+                                    <span class="status-badge status-pill status-unsolved">
+                                        <i class="fa fa-circle-o"></i> {{ _('Unsolved') }}
+                                    </span>
                                 {% endif %}
                             </td>
-                        {% endif %}
-                        <td class="users">
-                            <a href="{{ url('ranked_submissions', problem.code) }}">
-                                {% if not request.in_contest or not hide_contest_scoreboard %}
-                                    {{ problem.user_count }}
-                                {% else %}
-                                    ???
-                                {% endif %}
-                            </a>
-                        </td>
-                    </tr>
-                {% endfor %}
+
+                            <!-- Actions Ellipsis Menu -->
+                            <td class="col-actions">
+                                <div class="actions-dropdown">
+                                    <button type="button" class="btn-actions-toggle problem-actions-btn" aria-haspopup="true" aria-expanded="false" title="{{ _('Actions') }}">
+                                        <i class="fa fa-ellipsis-h"></i>
+                                    </button>
+                                    <div class="actions-menu">
+                                        <a href="{{ url('problem_detail', problem.code) }}" class="actions-menu-item">
+                                            <i class="fa fa-book fa-fw"></i> {{ _('Statement') }}
+                                        </a>
+                                        <a href="{{ url('problem_submit', problem.code) }}" class="actions-menu-item">
+                                            <i class="fa fa-code fa-fw"></i> {{ _('Submit') }}
+                                        </a>
+                                        <a href="{{ url('ranked_submissions', problem.code) }}" class="actions-menu-item">
+                                            <i class="fa fa-trophy fa-fw"></i> {{ _('Best Submissions') }}
+                                        </a>
+                                        {% if request.user.is_authenticated %}
+                                            <a href="{{ url('user_submissions', problem.code, request.user.username) }}" class="actions-menu-item">
+                                                <i class="fa fa-history fa-fw"></i> {{ _('My Submissions') }}
+                                            </a>
+                                        {% endif %}
+                                        {% if problem.has_public_editorial %}
+                                            <a href="{{ url('problem_editorial', problem.code) }}" class="actions-menu-item">
+                                                <i class="fa fa-lightbulb-o fa-fw"></i> {{ _('Editorial') }}
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr class="empty-state-row">
+                            <td colspan="8">
+                                <div class="problems-empty-box">
+                                    <div class="empty-icon"><i class="fa fa-search"></i></div>
+                                    <h3 class="empty-heading">{{ _('No problems found') }}</h3>
+                                    <p class="empty-text">{{ _('Try adjusting your search criteria or resetting filters.') }}</p>
+                                    <a href="{{ url('problem_list') }}" class="btn-reset-catalog">{{ _('Reset Filters') }}</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-   {% if page_obj.has_other_pages() %}
-       <div class="bottom-pagination-bar">{% include "list-pages.html" %}</div>
-   {% endif %}
+
+    <!-- Bottom Pagination Bar -->
+    {% if page_obj.has_other_pages() %}
+        <div class="problems-bottom-pagination">
+            {% include "list-pages.html" %}
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block js_media %}
+    {{ super() }}
+    <script src="{{ static('problems-list.js') }}"></script>
 {% endblock %}

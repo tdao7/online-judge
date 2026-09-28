@@ -213,6 +213,19 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
         else:
             context['vote'] = None
 
+        usable = (
+            self.object.usable_languages.order_by('name', 'key')
+            .prefetch_related(Prefetch('runtimeversion_set', RuntimeVersion.objects.order_by('priority')))
+        )
+        context['usable_languages'] = usable
+        if authed and user.profile.language:
+            context['default_lang'] = user.profile.language
+        elif usable.exists():
+            context['default_lang'] = usable.first()
+        else:
+            context['default_lang'] = None
+        context['ACE_URL'] = settings.ACE_URL
+
         return context
 
 
@@ -448,11 +461,25 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         if self.profile is not None:
             filter = Problem.q_add_author_curator_tester(filter, self.profile)
         queryset = Problem.objects.filter(filter).select_related('group').defer('description', 'summary')
-        if self.profile is not None and self.hide_solved:
-            queryset = queryset.exclude(id__in=Submission.objects
-                                        .filter(user=self.profile, is_archived=False,
-                                                result='AC', case_points__gte=F('case_total'))
-                                        .values_list('problem_id', flat=True))
+        # Status filtering (all, solved, unsolved, bookmarked)
+        if self.profile is not None:
+            if self.status_filter == 'solved':
+                queryset = queryset.filter(id__in=user_completed_ids(self.profile))
+            elif self.status_filter == 'unsolved' or self.hide_solved:
+                queryset = queryset.exclude(id__in=user_completed_ids(self.profile))
+            elif self.status_filter == 'bookmarked':
+                b_codes = self.request.GET.get('bookmarks', '')
+                if b_codes:
+                    codes_list = [c.strip() for c in b_codes.split(',') if c.strip()]
+                    queryset = queryset.filter(code__in=codes_list)
+        elif self.status_filter == 'bookmarked':
+            b_codes = self.request.GET.get('bookmarks', '')
+            if b_codes:
+                codes_list = [c.strip() for c in b_codes.split(',') if c.strip()]
+                queryset = queryset.filter(code__in=codes_list)
+        elif self.status_filter == 'solved':
+            queryset = queryset.none()
+
         if self.show_types:
             queryset = queryset.prefetch_related('types')
         queryset = queryset.annotate(has_public_editorial=Case(
@@ -466,8 +493,27 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             queryset = queryset.filter(group__id=self.category)
         if self.selected_types:
             queryset = queryset.filter(types__in=self.selected_types)
-        if 'search' in self.request.GET:
-            self.search_query = query = ' '.join(self.request.GET.getlist('search')).strip()
+
+        # Difficulty preset filtering
+        if self.difficulty == 'easy':
+            queryset = queryset.filter(points__lte=10)
+        elif self.difficulty == 'medium':
+            queryset = queryset.filter(points__gt=10, points__lte=30)
+        elif self.difficulty == 'hard':
+            queryset = queryset.filter(points__gt=30)
+
+        # Points preset filtering
+        if self.points_preset == '1-10':
+            queryset = queryset.filter(points__gte=1, points__lte=10)
+        elif self.points_preset == '11-25':
+            queryset = queryset.filter(points__gte=11, points__lte=25)
+        elif self.points_preset == '26-50':
+            queryset = queryset.filter(points__gte=26, points__lte=50)
+        elif self.points_preset in ('50+', '50 '):
+            queryset = queryset.filter(points__gt=50)
+        search_terms = self.request.GET.getlist('search') or self.request.GET.getlist('q')
+        if search_terms:
+            self.search_query = query = ' '.join(search_terms).strip()
             if query:
                 if settings.ENABLE_FTS and self.full_text:
                     queryset = self.apply_full_text(queryset, query)
@@ -496,9 +542,14 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context['full_text'] = 0 if self.in_contest else int(self.full_text)
         context['category'] = self.category
         context['categories'] = ProblemGroup.objects.all()
-        if self.show_types:
-            context['selected_types'] = self.selected_types
-            context['problem_types'] = ProblemType.objects.all()
+        context['problem_types'] = ProblemType.objects.all()
+        context['selected_types'] = self.selected_types
+        context['status_filter'] = getattr(self, 'status_filter', 'all')
+        context['difficulty'] = getattr(self, 'difficulty', '')
+        context['points_preset'] = getattr(self, 'points_preset', '')
+        context['current_sort'] = self.order.lstrip('-')
+        context['is_desc'] = self.order.startswith('-')
+        context['order'] = self.order
         context['has_fts'] = settings.ENABLE_FTS
         context['search_query'] = self.search_query
         context['completed_problem_ids'] = self.get_completed_problems()
@@ -546,7 +597,12 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
 
     def setup_problem_list(self, request):
         self.hide_solved = self.GET_with_session(request, 'hide_solved')
-        self.show_types = self.GET_with_session(request, 'show_types')
+        if 'show_types' in request.GET:
+            self.show_types = request.GET.get('show_types') == '1'
+        elif 'show_types' in request.session:
+            self.show_types = request.session.get('show_types')
+        else:
+            self.show_types = True
         self.full_text = self.GET_with_session(request, 'full_text')
         self.has_public_editorial = self.GET_with_session(request, 'has_public_editorial')
 
@@ -559,12 +615,20 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         if not self.show_types:
             self.all_sorts.discard('type')
 
-        self.category = safe_int_or_none(request.GET.get('category'))
+        group_param = request.GET.get('category') if 'category' in request.GET else request.GET.get('group')
+        self.category = safe_int_or_none(group_param)
         if 'type' in request.GET:
             try:
                 self.selected_types = list(map(int, request.GET.getlist('type')))
             except ValueError:
                 pass
+
+        # Screen 1 filters: status, difficulty, points_preset
+        self.difficulty = request.GET.get('difficulty', '')
+        self.points_preset = request.GET.get('points_preset', '').replace(' ', '+')
+        self.status_filter = request.GET.get('status', 'all')
+        if self.status_filter == 'unsolved':
+            self.hide_solved = True
 
         self.point_start = safe_float_or_none(request.GET.get('point_start'))
         self.point_end = safe_float_or_none(request.GET.get('point_end'))
@@ -748,11 +812,26 @@ class ProblemSubmit(LoginRequiredMixin, ProblemMixin, TitleMixin, SingleObjectFo
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['langs'] = Language.objects.all()
+        context['usable_languages'] = context['form'].fields['language'].queryset
         context['no_judges'] = not context['form'].fields['language'].queryset
         context['submission_limit'] = self.contest_problem and self.contest_problem.max_submissions
         context['submissions_left'] = self.remaining_submission_count
         context['ACE_URL'] = settings.ACE_URL
         context['default_lang'] = self.default_language
+        context['problem'] = self.object
+        try:
+            translation = self.object.translations.get(language=self.request.LANGUAGE_CODE)
+        except ProblemTranslation.DoesNotExist:
+            context['title'] = self.object.name
+            context['language'] = settings.LANGUAGE_CODE
+            context['description'] = self.object.description
+            context['translated'] = False
+        else:
+            context['title'] = translation.name
+            context['language'] = self.request.LANGUAGE_CODE
+            context['description'] = translation.description
+            context['translated'] = True
+        context['enable_comments'] = settings.DMOJ_ENABLE_COMMENTS
         return context
 
     def post(self, request, *args, **kwargs):

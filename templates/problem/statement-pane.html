@@ -1,0 +1,61 @@
+<!-- Tab Navigation Bar -->
+<div class="statement-tabs-bar" role="tablist">
+    <button type="button" class="statement-tab-item active" id="tab-statement" role="tab" aria-selected="true" aria-controls="panel-statement">
+        <i class="fa fa-th" aria-hidden="true"></i>
+        <span>{{ _('Statement') }}</span>
+    </button>
+
+    {% if editorial and editorial.is_accessible_by(request.user) and not request.in_contest %}
+        <a href="{{ url('problem_editorial', problem.code) }}" class="statement-tab-item" id="tab-editorial" role="tab">
+            <i class="fa fa-list-ul" aria-hidden="true"></i>
+            <span>{{ _('Editorial') }}</span>
+        </a>
+    {% endif %}
+
+    <a href="{% if request.user.is_authenticated %}{{ url('user_submissions', problem.code, request.user.username) }}{% else %}{{ url('chronological_submissions', problem.code) }}{% endif %}"
+       class="statement-tab-item" id="tab-submissions" role="tab">
+        <i class="fa fa-history" aria-hidden="true"></i>
+        <span>{{ _('Submissions') }}</span>
+    </a>
+
+    {% if enable_comments %}
+        <button type="button" class="statement-tab-item" id="tab-comments" role="tab" aria-controls="panel-comments">
+            <i class="fa fa-comment-o" aria-hidden="true"></i>
+            <span>{{ _('Comments') }} ({{ comment_list|length if comment_list is defined and comment_list else 0 }})</span>
+        </button>
+    {% endif %}
+</div>
+
+<!-- Statement Body Panel -->
+<div class="statement-panel-body" id="panel-statement" role="tabpanel" aria-labelledby="tab-statement">
+    <div class="statement-content" id="statement-content">
+        {% cache 86400 'problem_html_v2' problem.id MATH_ENGINE LANGUAGE_CODE %}
+            {{ description|markdown(problem.markdown_style, MATH_ENGINE)|reference|str|safe }}
+        {% endcache %}
+
+        {% with license=problem.license %}
+            {% if license %}
+                <div class="statement-license">
+                    <a href="{{ url('license', license.key) }}" target="_blank" rel="noopener noreferrer">
+                        <i class="fa fa-creative-commons" aria-hidden="true"></i> {{ license.display or license.name }}
+                    </a>
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
+
+<!-- Comments Section (Hidden by default, toggled via Comments tab) -->
+{% if enable_comments %}
+    <div class="statement-comments-drawer" id="panel-comments" style="display: none;" role="tabpanel" aria-labelledby="tab-comments">
+        <div class="comments-drawer-header">
+            <h3><i class="fa fa-comments-o"></i> {{ _('Community Discussion') }}</h3>
+            <button type="button" class="btn-close-comments" id="btn-close-comments" aria-label="{{ _('Close comments') }}">&times;</button>
+        </div>
+        <div class="comments-drawer-content">
+            {% with comment_warn_code=true %}
+                {% include "comments/list.html" %}
+            {% endwith %}
+        </div>
+    </div>
+{% endif %}

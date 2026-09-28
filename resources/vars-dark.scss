@@ -1,5 +1,34 @@
 @forward "vars-common";
 
+// Upstream DMOJ blue override -> warm orange brand primary
+$highlight_blue: #F97316;
+
+:root {
+  --color-bg-app: #18181B;
+  --color-bg-sidebar: #121214;
+  --color-bg-card: #27272A;
+  --color-bg-card-subtle: #1F1F23;
+  --color-bg-input: #27272A;
+  --color-bg-code: #09090B;
+  --color-bg-hover: #27272A;
+  --color-bg-active: #382415;
+  --color-text-main: #F4F4F5;
+  --color-text-secondary: #D4D4D8;
+  --color-text-muted: #A1A1AA;
+  --color-text-subtle: #71717A;
+  --color-border-subtle: #27272A;
+  --color-border: #3F3F46;
+  --color-border-strong: #52525B;
+  --color-primary: #F97316;
+  --color-primary-hover: #EA580C;
+  --color-primary-active: #C2410C;
+  --color-danger: #EF4444;
+  --color-danger-bg: #FEF2F2;
+  --color-danger-text: #F87171;
+  --color-danger-active: #B91C1C;
+  --color-danger-border: #FECACA;
+}
+
 $is_light_theme: false;
 
 $color_primary0: #0f0f0f;

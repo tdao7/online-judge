@@ -2,10 +2,8 @@
 @use "vars-common" as *;
 
 #user-links {
-    top: 0;
-    right: 0;
-    position: absolute;
-    height: 100%;
+    position: relative;
+    height: auto;
 
     .anon {
         padding-right: 10px;
@@ -273,12 +271,8 @@ nav {
 }
 
 @media not all and (max-width: 760px) {
-    #nav-list {
+    nav #nav-list {
         li {
-            &.home-menu-item {
-                display: none;
-            }
-
             &:not(:hover) > ul {
                 display: none !important;
             }
