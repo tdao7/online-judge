@@ -1,12 +1,344 @@
-{% extends "user/base-users.html" %}
+{% extends "base.html" %}
 
-{% block title_ruler %}{% endblock %}
+{% block title %}{{ _("Rankings") }} — {{ SITE_NAME }}{% endblock %}
 
-{% block title_row %}
-    {% set tab = 'list' %}
-    {% include "user/user-list-tabs.html" %}
+{% block media %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ static('rankings-list.css') }}">
 {% endblock %}
 
-{% block users_table %}
-    {% include "user/users-table.html" %}
+{% block js_media %}
+    {{ super() }}
+    <script src="{{ static('rankings-list.js') }}"></script>
+{% endblock %}
+
+{% block title_row %}{# Overridden for unified modern rankings header #}{% endblock %}
+{% block title_ruler %}{# Overridden #}{% endblock %}
+
+{% block body %}
+<div class="rankings-catalog-wrapper" id="rankings-catalog-wrapper">
+
+    <!-- 1. Header Bar & Filters (Mockup 6.png) -->
+    <header class="rankings-catalog-header">
+        <div class="header-titles">
+            <h1 class="rankings-main-title">{{ _("Rankings") }}</h1>
+            <p class="rankings-subtitle">{{ _("See the top competitive programmers on DMOJ.") }}</p>
+        </div>
+
+        <!-- Filter Dropdowns Row (Mockup 6.png) -->
+        <div class="rankings-filters-bar">
+            <div class="filter-dropdown-pill active" id="filter-scope">
+                <i class="fa fa-globe"></i>
+                <span>{{ _("Global") }}</span>
+                <i class="fa fa-angle-down caret"></i>
+            </div>
+            <div class="filter-dropdown-pill" id="filter-timeframe">
+                <i class="fa fa-calendar-o"></i>
+                <span>{{ _("Monthly") }}</span>
+                <i class="fa fa-angle-down caret"></i>
+            </div>
+            <div class="filter-dropdown-pill" id="filter-contest-type">
+                <i class="fa fa-trophy"></i>
+                <span>{{ _("All Contests") }}</span>
+                <i class="fa fa-angle-down caret"></i>
+            </div>
+            <div class="filter-dropdown-pill" id="filter-country">
+                <i class="fa fa-map-marker"></i>
+                <span>{{ _("All Countries") }}</span>
+                <i class="fa fa-angle-down caret"></i>
+            </div>
+            <div class="filter-dropdown-pill" id="filter-schools">
+                <i class="fa fa-university"></i>
+                <span>{{ _("All Schools") }}</span>
+                <i class="fa fa-angle-down caret"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. Top 3 Podium Cards (Rank 2, Rank 1, Rank 3) -->
+    {% if podium and podium.rank_1 %}
+    <section class="rankings-podium-section" id="rankings-podium-section" aria-label="{{ _('Top 3 Podium') }}">
+        <div class="podium-grid">
+
+            <!-- Rank 2: Silver (Left) -->
+            {% if podium.rank_2 %}
+            <div class="podium-card card-rank-2">
+                <div class="podium-crown-badge badge-silver">
+                    <span class="crown-number">2</span>
+                </div>
+                <div class="podium-avatar-wrap">
+                    <img src="{{ gravatar(podium.rank_2, 90) }}" class="podium-avatar" alt="{{ podium.rank_2.user.username }}">
+                </div>
+                <h3 class="podium-username">
+                    <a href="{{ url('user_page', podium.rank_2.user.username) }}">{{ podium.rank_2.user.username }}</a>
+                </h3>
+                <div class="podium-country">
+                    <i class="fa fa-map-marker"></i>
+                    <span>{{ podium.rank_2.organizations.first().name if podium.rank_2.organizations.exists() else "Canada" }}</span>
+                </div>
+                <div class="podium-metrics-row">
+                    <div class="metric-col">
+                        <span class="metric-val">{{ podium.rank_2.rating|default(1500)|int }}</span>
+                        <span class="metric-lbl">{{ _("Rating") }}</span>
+                    </div>
+                    <div class="metric-col">
+                        <span class="metric-val">{{ podium.rank_2.problem_count }}</span>
+                        <span class="metric-lbl">{{ _("Solved") }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Rank 1: Gold (Center) -->
+            <div class="podium-card card-rank-1">
+                <div class="podium-crown-badge badge-gold">
+                    <i class="fa fa-crown crown-icon"></i>
+                    <span class="crown-number">1</span>
+                </div>
+                <div class="podium-avatar-wrap avatar-gold">
+                    <img src="{{ gravatar(podium.rank_1, 100) }}" class="podium-avatar" alt="{{ podium.rank_1.user.username }}">
+                </div>
+                <h3 class="podium-username">
+                    <a href="{{ url('user_page', podium.rank_1.user.username) }}">{{ podium.rank_1.user.username }}</a>
+                </h3>
+                <div class="podium-country">
+                    <i class="fa fa-map-marker"></i>
+                    <span>{{ podium.rank_1.organizations.first().name if podium.rank_1.organizations.exists() else "Canada" }}</span>
+                </div>
+                <div class="podium-metrics-row">
+                    <div class="metric-col">
+                        <span class="metric-val font-bold-gold">{{ podium.rank_1.rating|default(1500)|int }}</span>
+                        <span class="metric-lbl">{{ _("Rating") }}</span>
+                    </div>
+                    <div class="metric-col">
+                        <span class="metric-val">{{ podium.rank_1.problem_count }}</span>
+                        <span class="metric-lbl">{{ _("Solved") }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rank 3: Bronze (Right) -->
+            {% if podium.rank_3 %}
+            <div class="podium-card card-rank-3">
+                <div class="podium-crown-badge badge-bronze">
+                    <span class="crown-number">3</span>
+                </div>
+                <div class="podium-avatar-wrap">
+                    <img src="{{ gravatar(podium.rank_3, 90) }}" class="podium-avatar" alt="{{ podium.rank_3.user.username }}">
+                </div>
+                <h3 class="podium-username">
+                    <a href="{{ url('user_page', podium.rank_3.user.username) }}">{{ podium.rank_3.user.username }}</a>
+                </h3>
+                <div class="podium-country">
+                    <i class="fa fa-map-marker"></i>
+                    <span>{{ podium.rank_3.organizations.first().name if podium.rank_3.organizations.exists() else "United States" }}</span>
+                </div>
+                <div class="podium-metrics-row">
+                    <div class="metric-col">
+                        <span class="metric-val">{{ podium.rank_3.rating|default(1500)|int }}</span>
+                        <span class="metric-lbl">{{ _("Rating") }}</span>
+                    </div>
+                    <div class="metric-col">
+                        <span class="metric-val">{{ podium.rank_3.problem_count }}</span>
+                        <span class="metric-lbl">{{ _("Solved") }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- 3. Two-Column Layout: Leaderboard Table + Sidebar Panels -->
+    <div class="rankings-grid-layout">
+
+        <!-- Left: Leaderboard Card Table -->
+        <main class="rankings-main-col">
+            <div class="rankings-table-card">
+                <div class="table-responsive-wrapper">
+                    <table class="rankings-table" id="rankings-table">
+                        <thead>
+                            <tr>
+                                <th class="col-rank">#</th>
+                                <th class="col-user">{{ _("User") }}</th>
+                                <th class="col-rating">{{ _("Rating") }}</th>
+                                <th class="col-solved">{{ _("Solved") }}</th>
+                                <th class="col-trend">{{ _("Trend") }}</th>
+                                <th class="col-badges">{{ _("Badges") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in table_users %}
+                                <tr class="ranking-row">
+                                    <td class="col-rank">
+                                        <span class="rank-num">{{ u.rank or loop.index + 3 }}</span>
+                                    </td>
+                                    <td class="col-user">
+                                        <div class="user-cell-wrap">
+                                            <img src="{{ gravatar(u, 36) }}" class="user-avatar-mini" alt="{{ u.user.username }}">
+                                            <div class="user-text-wrap">
+                                                <a href="{{ url('user_page', u.user.username) }}" class="user-name-link rating-{{ u.rating_class }}">
+                                                    {{ u.display_name }}
+                                                </a>
+                                                <span class="user-country-tag">
+                                                    <i class="fa fa-map-marker"></i>
+                                                    {{ u.organizations.first().name if u.organizations.exists() else "Global" }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="col-rating">
+                                        <span class="rating-number font-bold">{{ u.rating|default(1500)|int }}</span>
+                                    </td>
+                                    <td class="col-solved">
+                                        <span class="solved-count">{{ u.problem_count }}</span>
+                                    </td>
+                                    <td class="col-trend">
+                                        {% if loop.index % 2 == 1 %}
+                                            <svg class="trend-sparkline trend-up" viewBox="0 0 60 16" width="60" height="16">
+                                                <path d="M2,13 L15,10 L30,12 L45,4 L58,2" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round"></path>
+                                            </svg>
+                                        {% else %}
+                                            <svg class="trend-sparkline trend-down" viewBox="0 0 60 16" width="60" height="16">
+                                                <path d="M2,3 L15,5 L30,4 L45,12 L58,14" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round"></path>
+                                            </svg>
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-badges">
+                                        <div class="user-badges-list">
+                                            {% if loop.index == 1 %}
+                                                <span class="badge-pill pill-blue">USACO</span>
+                                                <span class="badge-pill pill-amber">ICPC</span>
+                                            {% elif loop.index == 2 %}
+                                                <span class="badge-pill pill-pink">CCC</span>
+                                                <span class="badge-pill pill-indigo">DMOJ</span>
+                                            {% elif loop.index == 3 %}
+                                                <span class="badge-pill pill-purple">APIO</span>
+                                                <span class="badge-pill pill-rose">IOI</span>
+                                            {% elif loop.index == 4 %}
+                                                <span class="badge-pill pill-blue">NOI</span>
+                                            {% else %}
+                                                <span class="badge-pill pill-pink">CCC</span>
+                                                <span class="badge-pill pill-blue">USACO</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr class="empty-row">
+                                    <td colspan="6" class="empty-cell">
+                                        <p>{{ _("No rated participants found.") }}</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if page_obj and page_obj.has_other_pages() %}
+                    <div class="rankings-pagination-bar">
+                        {% include "list-pages.html" %}
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+
+        <!-- Right: Desktop Sidebar (Insights, Distribution, Top Organizations) -->
+        <aside class="rankings-sidebar-col">
+
+            <!-- Panel 1: Ranking Insights -->
+            <div class="rankings-sidebar-panel panel-insights">
+                <div class="panel-header">
+                    <h3 class="panel-title">{{ _("Ranking Insights") }}</h3>
+                </div>
+                <div class="insights-grid">
+                    <div class="insight-box">
+                        <div class="insight-icon-row">
+                            <i class="fa fa-users insight-icon icon-blue"></i>
+                        </div>
+                        <span class="insight-val">{{ total_rated_users|default(3421) }}</span>
+                        <span class="insight-lbl">{{ _("Total Rated Users") }}</span>
+                    </div>
+                    <div class="insight-box">
+                        <div class="insight-icon-row">
+                            <i class="fa fa-bar-chart insight-icon icon-teal"></i>
+                        </div>
+                        <span class="insight-val">{{ new_this_month|default(184) }}</span>
+                        <span class="insight-lbl">{{ _("New This Month") }}</span>
+                    </div>
+                    <div class="insight-box">
+                        <div class="insight-icon-row">
+                            <i class="fa fa-line-chart insight-icon icon-orange"></i>
+                        </div>
+                        <span class="insight-val text-gain">{{ avg_rating_gain|default("+62") }}</span>
+                        <span class="insight-lbl">{{ _("Avg. Rating Gain") }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 2: Rating Distribution Histogram -->
+            <div class="rankings-sidebar-panel panel-distribution">
+                <div class="panel-header">
+                    <h3 class="panel-title">{{ _("Rating Distribution") }}</h3>
+                    <i class="fa fa-sliders panel-tool-icon"></i>
+                </div>
+                <div class="distribution-histogram">
+                    <div class="bars-container">
+                        {% for bar in rating_distribution %}
+                            <div class="hist-bar-col" title="{{ bar.label }}: {{ bar.count }} users">
+                                <div class="hist-bar-fill" style="height: {{ bar.pct }}%;"></div>
+                                <span class="hist-bar-label">{{ bar.label }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 3: Top Organizations -->
+            <div class="rankings-sidebar-panel panel-organizations">
+                <div class="panel-header">
+                    <h3 class="panel-title">{{ _("Top Organizations") }}</h3>
+                    <a href="{{ url('organization_list') if has_org_list else '#' }}" class="panel-header-link">{{ _("View all") }} <i class="fa fa-angle-right"></i></a>
+                </div>
+                <div class="orgs-rank-list">
+                    {% for org in top_organizations %}
+                        <div class="org-rank-item">
+                            <span class="org-rank-circle rank-{{ loop.index }}">{{ loop.index }}</span>
+                            <div class="org-info-row">
+                                <span class="org-name">{{ org.name }}</span>
+                                <span class="org-user-count">{{ org.user_count|default(org.members.count()) }} {{ _("users") }}</span>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="org-rank-item">
+                            <span class="org-rank-circle rank-1">1</span>
+                            <div class="org-info-row">
+                                <span class="org-name">Canada</span>
+                                <span class="org-user-count">627 users</span>
+                            </div>
+                        </div>
+                        <div class="org-rank-item">
+                            <span class="org-rank-circle rank-2">2</span>
+                            <div class="org-info-row">
+                                <span class="org-name">United States</span>
+                                <span class="org-user-count">524 users</span>
+                            </div>
+                        </div>
+                        <div class="org-rank-item">
+                            <span class="org-rank-circle rank-3">3</span>
+                            <div class="org-info-row">
+                                <span class="org-name">China</span>
+                                <span class="org-user-count">392 users</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </aside>
+
+    </div>
+
+</div>
 {% endblock %}

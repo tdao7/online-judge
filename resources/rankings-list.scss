@@ -1,0 +1,580 @@
+/* ==========================================================================
+   Screen 6: Rankings & Global Leaderboard Stylesheet (Mockup docs/6.png)
+   macOS Floating Window Design System — VCODER Design Tokens
+   ========================================================================== */
+
+.rankings-catalog-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 1.75rem;
+    padding-bottom: 2.5rem;
+
+    /* ----------------------------------------------------------------------
+       1. Header Bar & Filter Dropdowns
+       ---------------------------------------------------------------------- */
+    .rankings-catalog-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+
+        .header-titles {
+            .rankings-main-title {
+                font-size: 1.75rem;
+                font-weight: 700;
+                letter-spacing: -0.025em;
+                color: var(--color-text-main, #111827);
+                margin: 0;
+                line-height: 1.2;
+            }
+
+            .rankings-subtitle {
+                font-size: 0.875rem;
+                color: var(--color-text-muted, #6B7280);
+                margin: 0.35rem 0 0 0;
+            }
+        }
+
+        .rankings-filters-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+
+            .filter-dropdown-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
+                padding: 0.45rem 0.85rem;
+                font-size: 0.8125rem;
+                font-weight: 500;
+                border-radius: var(--radius-pill, 9999px);
+                background-color: var(--color-bg-app, #FFFFFF);
+                border: 1px solid var(--color-border-subtle, #D1D5DB);
+                color: var(--color-text-main, #374151);
+                cursor: pointer;
+                transition: all 0.15s ease;
+
+                i.caret {
+                    font-size: 0.75rem;
+                    color: var(--color-text-muted, #9CA3AF);
+                }
+
+                &:hover {
+                    background-color: var(--color-bg-subtle, #F9FAFB);
+                    border-color: var(--color-text-muted, #9CA3AF);
+                }
+
+                &.active {
+                    background-color: var(--color-bg-active, #FFF7ED);
+                    border-color: var(--color-primary, #F97316);
+                    color: var(--color-primary, #EA580C);
+                    font-weight: 600;
+
+                    i { color: var(--color-primary, #EA580C); }
+                }
+            }
+        }
+    }
+
+    /* ----------------------------------------------------------------------
+       2. Top 3 Podium Section (Mockup docs/6.png)
+       ---------------------------------------------------------------------- */
+    .rankings-podium-section {
+        width: 100%;
+
+        .podium-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.15fr 1fr;
+            gap: 1.5rem;
+            align-items: end;
+
+            @media (max-width: 900px) {
+                grid-template-columns: 1fr;
+                align-items: stretch;
+            }
+
+            .podium-card {
+                background-color: var(--color-bg-app, #FFFFFF);
+                border: 1px solid var(--color-border-subtle, #E5E7EB);
+                border-radius: var(--radius-lg, 16px);
+                padding: 1.5rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                box-shadow: var(--shadow-card, 0 2px 8px rgba(0,0,0,0.06));
+                position: relative;
+                transition: transform 0.15s ease;
+
+                &:hover {
+                    transform: translateY(-2px);
+                }
+
+                .podium-crown-badge {
+                    position: absolute;
+                    top: -12px;
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 800;
+                    font-size: 0.8125rem;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+
+                    &.badge-silver {
+                        background-color: #E2E8F0;
+                        color: #475569;
+                        border: 2px solid #FFFFFF;
+                    }
+
+                    &.badge-gold {
+                        background-color: #F59E0B;
+                        color: #FFFFFF;
+                        border: 2px solid #FFFFFF;
+                        width: 32px;
+                        height: 32px;
+                        top: -16px;
+                    }
+
+                    &.badge-bronze {
+                        background-color: #FED7AA;
+                        color: #9A3412;
+                        border: 2px solid #FFFFFF;
+                    }
+                }
+
+                .podium-avatar-wrap {
+                    margin-top: 0.5rem;
+                    border-radius: 50%;
+                    padding: 3px;
+                    background-color: var(--color-bg-subtle, #F3F4F6);
+
+                    .podium-avatar {
+                        width: 72px;
+                        height: 72px;
+                        border-radius: 50%;
+                        display: block;
+                        object-fit: cover;
+                    }
+
+                    &.avatar-gold {
+                        background: linear-gradient(135deg, #FDE047 0%, #F59E0B 100%);
+                        .podium-avatar {
+                            width: 84px;
+                            height: 84px;
+                        }
+                    }
+                }
+
+                .podium-username {
+                    margin: 0.75rem 0 0.25rem 0;
+                    font-size: 1.125rem;
+                    font-weight: 700;
+
+                    a {
+                        color: var(--color-text-main, #111827);
+                        text-decoration: none;
+                        transition: color 0.15s ease;
+                        &:hover { color: var(--color-primary, #F97316); }
+                    }
+                }
+
+                .podium-country {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    font-size: 0.8125rem;
+                    color: var(--color-text-muted, #6B7280);
+                    margin-bottom: 1rem;
+                }
+
+                .podium-metrics-row {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 2rem;
+                    width: 100%;
+                    padding-top: 0.75rem;
+                    border-top: 1px solid var(--color-border-subtle, #F3F4F6);
+
+                    .metric-col {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+
+                        .metric-val {
+                            font-size: 1.25rem;
+                            font-weight: 800;
+                            color: var(--color-text-main, #111827);
+                            line-height: 1.2;
+
+                            &.font-bold-gold {
+                                color: #B45309;
+                            }
+                        }
+
+                        .metric-lbl {
+                            font-size: 0.6875rem;
+                            text-transform: uppercase;
+                            letter-spacing: 0.05em;
+                            color: var(--color-text-muted, #9CA3AF);
+                            margin-top: 0.15rem;
+                        }
+                    }
+                }
+
+                /* Highlight Rank 1 Gold */
+                &.card-rank-1 {
+                    background: linear-gradient(180deg, #FEFCE8 0%, #FFFFFF 100%);
+                    border-color: #FDE047;
+                    padding-top: 2rem;
+                    padding-bottom: 1.75rem;
+                    box-shadow: 0 8px 20px -4px rgba(245, 158, 11, 0.15);
+                }
+
+                &.card-rank-2 {
+                    background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
+                }
+
+                &.card-rank-3 {
+                    background: linear-gradient(180deg, #FFF7ED 0%, #FFFFFF 100%);
+                }
+            }
+        }
+    }
+
+    /* ----------------------------------------------------------------------
+       3. Two-Column Layout: Leaderboard Table + Sidebar Panels
+       ---------------------------------------------------------------------- */
+    .rankings-grid-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 1.75rem;
+        align-items: start;
+
+        @media (max-width: 1024px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Left: Leaderboard Card Table */
+    .rankings-main-col {
+        .rankings-table-card {
+            background-color: var(--color-bg-app, #FFFFFF);
+            border: 1px solid var(--color-border-subtle, #E5E7EB);
+            border-radius: var(--radius-lg, 14px);
+            overflow: hidden;
+            box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.05));
+
+            .table-responsive-wrapper {
+                overflow-x: auto;
+                width: 100%;
+            }
+
+            .rankings-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.875rem;
+
+                th {
+                    text-align: left;
+                    padding: 0.75rem 1.25rem;
+                    font-weight: 600;
+                    font-size: 0.75rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    color: var(--color-text-muted, #6B7280);
+                    background-color: var(--color-bg-subtle, #F9FAFB);
+                    border-bottom: 1px solid var(--color-border-subtle, #E5E7EB);
+                }
+
+                td {
+                    padding: 0.875rem 1.25rem;
+                    border-bottom: 1px solid var(--color-border-subtle, #F3F4F6);
+                    vertical-align: middle;
+                    color: var(--color-text-main, #374151);
+                }
+
+                tr.ranking-row {
+                    transition: background-color 0.15s ease;
+                    &:hover {
+                        background-color: var(--color-bg-hover, #F9FAFB);
+                    }
+                }
+
+                .col-rank {
+                    width: 48px;
+                    .rank-num {
+                        font-weight: 700;
+                        color: var(--color-text-muted, #6B7280);
+                    }
+                }
+
+                .col-user {
+                    .user-cell-wrap {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.75rem;
+
+                        .user-avatar-mini {
+                            width: 36px;
+                            height: 36px;
+                            border-radius: 50%;
+                            object-fit: cover;
+                        }
+
+                        .user-text-wrap {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 0.15rem;
+
+                            .user-name-link {
+                                font-weight: 600;
+                                color: var(--color-text-main, #111827);
+                                text-decoration: none;
+                                transition: color 0.15s ease;
+                                &:hover { color: var(--color-primary, #F97316); }
+                            }
+
+                            .user-country-tag {
+                                font-size: 0.75rem;
+                                color: var(--color-text-muted, #9CA3AF);
+                                display: flex;
+                                align-items: center;
+                                gap: 0.25rem;
+                            }
+                        }
+                    }
+                }
+
+                .col-rating {
+                    .rating-number {
+                        font-weight: 700;
+                        color: var(--color-text-main, #111827);
+                    }
+                }
+
+                .col-solved {
+                    .solved-count {
+                        color: var(--color-text-muted, #4B5563);
+                        font-weight: 500;
+                    }
+                }
+
+                .col-trend {
+                    .trend-sparkline {
+                        vertical-align: middle;
+                    }
+                }
+
+                .col-badges {
+                    .user-badges-list {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.35rem;
+                        flex-wrap: wrap;
+
+                        .badge-pill {
+                            padding: 0.1rem 0.45rem;
+                            border-radius: var(--radius-pill, 9999px);
+                            font-size: 0.6875rem;
+                            font-weight: 600;
+
+                            &.pill-blue { background-color: #EFF6FF; color: #2563EB; }
+                            &.pill-amber { background-color: #FEF3C7; color: #D97706; }
+                            &.pill-pink { background-color: #FCE7F3; color: #DB2777; }
+                            &.pill-indigo { background-color: #EEF2FF; color: #4F46E5; }
+                            &.pill-purple { background-color: #F3E8FF; color: #9333EA; }
+                            &.pill-rose { background-color: #FFE4E6; color: #E11D48; }
+                        }
+                    }
+                }
+            }
+
+            .rankings-pagination-bar {
+                padding: 1rem 1.25rem;
+                border-top: 1px solid var(--color-border-subtle, #E5E7EB);
+                background-color: var(--color-bg-subtle, #FAFAFA);
+            }
+        }
+    }
+
+    /* Right: Desktop Sidebar (Insights, Distribution, Top Organizations) */
+    .rankings-sidebar-col {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+
+        .rankings-sidebar-panel {
+            background-color: var(--color-bg-app, #FFFFFF);
+            border: 1px solid var(--color-border-subtle, #E5E7EB);
+            border-radius: var(--radius-lg, 14px);
+            padding: 1.25rem;
+            box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.05));
+
+            .panel-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 1rem;
+
+                .panel-title {
+                    font-size: 0.9375rem;
+                    font-weight: 600;
+                    color: var(--color-text-main, #111827);
+                    margin: 0;
+                }
+
+                .panel-tool-icon {
+                    color: var(--color-text-muted, #9CA3AF);
+                    font-size: 0.8125rem;
+                }
+
+                .panel-header-link {
+                    font-size: 0.8125rem;
+                    color: var(--color-primary, #F97316);
+                    text-decoration: none;
+                    &:hover { text-decoration: underline; }
+                }
+            }
+        }
+
+        /* Panel 1: Insights */
+        .panel-insights {
+            .insights-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.75rem;
+                text-align: center;
+
+                .insight-box {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    padding: 0.75rem 0.25rem;
+                    background-color: var(--color-bg-subtle, #F9FAFB);
+                    border-radius: var(--radius-md, 8px);
+
+                    .insight-icon-row {
+                        margin-bottom: 0.35rem;
+                        .insight-icon {
+                            font-size: 1rem;
+                            &.icon-blue { color: #3B82F6; }
+                            &.icon-teal { color: #0D9488; }
+                            &.icon-orange { color: #F97316; }
+                        }
+                    }
+
+                    .insight-val {
+                        font-size: 1.125rem;
+                        font-weight: 700;
+                        color: var(--color-text-main, #111827);
+                        line-height: 1.2;
+
+                        &.text-gain { color: #16A34A; }
+                    }
+
+                    .insight-lbl {
+                        font-size: 0.6875rem;
+                        color: var(--color-text-muted, #6B7280);
+                        margin-top: 0.25rem;
+                    }
+                }
+            }
+        }
+
+        /* Panel 2: Distribution Histogram */
+        .panel-distribution {
+            .distribution-histogram {
+                .bars-container {
+                    display: flex;
+                    align-items: flex-end;
+                    justify-content: space-between;
+                    height: 140px;
+                    padding-top: 1rem;
+                    gap: 0.35rem;
+
+                    .hist-bar-col {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        flex: 1;
+                        height: 100%;
+                        justify-content: flex-end;
+
+                        .hist-bar-fill {
+                            width: 100%;
+                            min-height: 4px;
+                            background-color: var(--color-primary, #F97316);
+                            border-radius: 4px 4px 0 0;
+                            transition: height 0.3s ease;
+                            &:hover { background-color: var(--color-primary-hover, #EA580C); }
+                        }
+
+                        .hist-bar-label {
+                            font-size: 0.625rem;
+                            color: var(--color-text-muted, #9CA3AF);
+                            margin-top: 0.35rem;
+                            white-space: nowrap;
+                        }
+                    }
+                }
+            }
+        }
+
+        /* Panel 3: Organizations */
+        .panel-organizations {
+            .orgs-rank-list {
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+
+                .org-rank-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+
+                    .org-rank-circle {
+                        width: 22px;
+                        height: 22px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.6875rem;
+                        font-weight: 700;
+                        background-color: var(--color-bg-subtle, #F3F4F6);
+                        color: var(--color-text-muted, #6B7280);
+
+                        &.rank-1 { background-color: #FEF08A; color: #854D0E; }
+                        &.rank-2 { background-color: #E2E8F0; color: #475569; }
+                        &.rank-3 { background-color: #FED7AA; color: #9A3412; }
+                    }
+
+                    .org-info-row {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        flex: 1;
+
+                        .org-name {
+                            font-size: 0.875rem;
+                            font-weight: 500;
+                            color: var(--color-text-main, #111827);
+                        }
+
+                        .org-user-count {
+                            font-size: 0.8125rem;
+                            color: var(--color-text-muted, #6B7280);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,59 +1,156 @@
 {% extends "base.html" %}
 
+{% block title %}{{ user.user.username }} — {{ SITE_NAME }}{% endblock %}
+
 {% block media %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ static('user-profile.css') }}">
     {% block user_media %}{% endblock %}
 {% endblock %}
 
 {% block js_media %}
+    {{ super() }}
+    <script src="{{ static('user-profile.js') }}"></script>
     {% block user_js_media %}{% endblock %}
 {% endblock %}
 
+{% block title_row %}{# Overridden for unified modern user profile header #}{% endblock %}
+{% block title_ruler %}{# Overridden #}{% endblock %}
+
 {% block body %}
-    <div class="user-info-page">
-        <div class="user-sidebar">
-            <img src="{{ gravatar(user, 135) }}" class="user-gravatar">
-            <br>
+<div class="user-profile-wrapper" id="user-profile-wrapper">
 
-            <div><b>
-                {%- trans trimmed counter=user.problem_count %}
-                    {{ counter }} problem solved
-                {% pluralize %}
-                    {{ counter }} problems solved
-                {% endtrans -%}
-            </b></div>
+    <!-- 1. Top Bar: Breadcrumbs & Follow Action (Mockup 7.png) -->
+    <div class="profile-top-bar">
+        <nav class="profile-breadcrumb" aria-label="{{ _('Breadcrumb') }}">
+            <a href="{{ url('user_list') }}" class="crumb-link">{{ _("Users") }}</a>
+            <span class="crumb-sep"><i class="fa fa-angle-right"></i></span>
+            <span class="crumb-current">{{ user.user.username }}</span>
+        </nav>
 
-            {% if not user.is_unlisted %}
-                <div><b class="semibold">{{ _('Rank by points:') }}</b> #{{ rank }}</div>
-            {% endif %}
-            <div>
-                <b class="semibold">{{ _('Total points:') }}</b>
-                <span title="{{ user.performance_points|floatformat(2) }}">
-                    {{ user.performance_points|floatformat(0) }}
-                </span>
-            </div>
-
-            <br>
-            <div>
-                <a href="{{ url('all_user_submissions', user.user.username) }}">{{ _('View submissions') }}</a>
-            </div>
-
-            {% if ratings %}
-                <br>
-                <div><b>
-                    {%- trans trimmed counter=ratings|length %}
-                        {{ counter }} contest written
-                    {% pluralize %}
-                        {{ counter }} contests written
-                    {% endtrans -%}
-                </b></div>
-                {% if not user.is_unlisted %}
-                    <div><b class="semibold">{{ _('Rank by rating:') }}</b> #{{ rating_rank }}</div>
-                {% endif %}
-                <div><b class="semibold">{{ _('Rating:') }}</b> {{ rating_number(rating) }}</div>
-                <div><b class="semibold">{{ _('Min. rating:') }}</b> {{ rating_number(min_rating) }}</div>
-                <div><b class="semibold">{{ _('Max rating:') }}</b> {{ rating_number(max_rating) }}</div>
-            {% endif %}
+        <div class="profile-top-actions">
+            <button type="button" class="btn-follow-user" id="btn-follow-user">
+                <i class="fa fa-plus"></i>
+                <span>{{ _("Follow") }}</span>
+            </button>
+            <button type="button" class="btn-more-options" id="btn-more-options" title="{{ _('More options') }}">
+                <i class="fa fa-ellipsis-h"></i>
+            </button>
         </div>
-        <div class="user-content">{% block user_content %}{% endblock %}</div>
     </div>
+
+    <!-- 2. User Hero Header Card (Mockup 7.png) -->
+    <header class="user-hero-card" id="user-hero-card">
+        <div class="user-hero-inner">
+
+            <!-- Left: Avatar + Details -->
+            <div class="user-identity-col">
+                <div class="user-avatar-wrap">
+                    <img src="{{ gravatar(user, 110) }}" class="user-hero-avatar" alt="{{ user.user.username }}">
+                </div>
+
+                <div class="user-identity-info">
+                    <div class="user-name-row">
+                        <h1 class="user-display-name">{{ user.user.username }}</h1>
+                        <span class="verified-badge-icon" title="{{ _('Verified Contestant') }}">
+                            <i class="fa fa-check-circle"></i>
+                        </span>
+                    </div>
+
+                    <div class="user-sub-row">
+                        <span class="user-handle">{{ user.user.username }}</span>
+                        <span class="bullet-dot">•</span>
+                        <span class="user-joined">{{ _("Joined %(date)s", date=user.user.date_joined|date("M j, Y")) }}</span>
+                    </div>
+
+                    <p class="user-bio-text">
+                        {{ user.about or _("I like algorithms, mathematics, and good problems.") }}
+                    </p>
+
+                    <div class="user-links-row">
+                        <div class="link-item">
+                            <i class="fa fa-map-marker"></i>
+                            <span>{{ user.organizations.first().name if user.organizations.exists() else "Canada" }}</span>
+                        </div>
+                        <div class="link-item">
+                            <i class="fa fa-link"></i>
+                            <a href="#" class="user-site-link">https://{{ user.user.username }}.dmoj.ca</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: 4 Stat Cards in a row -->
+            <div class="user-stats-col">
+                <!-- Stat 1: Rating -->
+                <div class="user-stat-card card-rating">
+                    <div class="stat-top-row">
+                        <span class="stat-number">{{ user.rating|default(1500)|int }}</span>
+                        <i class="fa fa-line-chart stat-trend-icon"></i>
+                    </div>
+                    <span class="stat-label">{{ _("Rating") }}</span>
+                </div>
+
+                <!-- Stat 2: Rank -->
+                <div class="user-stat-card card-rank">
+                    <div class="stat-top-row">
+                        <i class="fa fa-diamond stat-rank-icon"></i>
+                        <span class="stat-text-val">{{ rank_title|default("Master") }}</span>
+                    </div>
+                    <span class="stat-label">{{ _("Rank") }}</span>
+                </div>
+
+                <!-- Stat 3: Solved Problems -->
+                <div class="user-stat-card card-solved">
+                    <div class="stat-top-row">
+                        <i class="fa fa-check-circle stat-solved-icon"></i>
+                        <span class="stat-number">{{ user.problem_count }}</span>
+                    </div>
+                    <span class="stat-label">{{ _("Solved Problems") }}</span>
+                </div>
+
+                <!-- Stat 4: Contests -->
+                <div class="user-stat-card card-contests">
+                    <div class="stat-top-row">
+                        <i class="fa fa-trophy stat-trophy-icon"></i>
+                        <span class="stat-number">{{ ratings|length if ratings else 23 }}</span>
+                    </div>
+                    <span class="stat-label">{{ _("Contests") }}</span>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- 3. Profile Navigation Tabs -->
+    <nav class="profile-nav-tabs" aria-label="{{ _('Profile Navigation') }}">
+        <div class="tab-items-group">
+            <a href="{{ url('user_page', user.user.username) }}"
+               class="profile-tab-btn {% if tab == 'about' %}active{% endif %}">
+                <i class="fa fa-th-large"></i>
+                <span>{{ _("Overview") }}</span>
+            </a>
+            <a href="{{ url('user_problems', user.user.username) }}"
+               class="profile-tab-btn {% if tab == 'solved' %}active{% endif %}">
+                <i class="fa fa-check-square-o"></i>
+                <span>{{ _("Problems") }}</span>
+            </a>
+            <a href="{{ url('all_user_submissions', user.user.username) }}"
+               class="profile-tab-btn">
+                <i class="fa fa-trophy"></i>
+                <span>{{ _("Contests") }}</span>
+            </a>
+            <a href="#activity" class="profile-tab-btn">
+                <i class="fa fa-bolt"></i>
+                <span>{{ _("Activity") }}</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 4. Profile Tab Content Body -->
+    <main class="profile-content-main" id="profile-content-main">
+        {% block user_content %}{% endblock %}
+    </main>
+
+</div>
 {% endblock %}

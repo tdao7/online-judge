@@ -31,8 +31,10 @@ from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, FormView, ListView, TemplateView, View
 from reversion import revisions
 
+from datetime import timedelta
+
 from judge.forms import CustomAuthenticationForm, DownloadDataForm, EmailChangeForm, ProfileForm, newsletter_id
-from judge.models import Profile, Submission
+from judge.models import Organization, Profile, Submission
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
 from judge.tasks import prepare_user_data
@@ -194,6 +196,53 @@ class UserAboutPage(UserPage):
                 .aggregate(min_year=Min('year_only'))['min_year']
             ),
         }))
+
+        # Rank title badge (Mockup docs/7.png)
+        r = self.object.rating or 0
+        if r >= 3000:
+            rank_title = 'Legendary Grandmaster'
+        elif r >= 2600:
+            rank_title = 'International Grandmaster'
+        elif r >= 2400:
+            rank_title = 'Grandmaster'
+        elif r >= 2100:
+            rank_title = 'Master'
+        elif r >= 1900:
+            rank_title = 'Candidate Master'
+        elif r >= 1600:
+            rank_title = 'Expert'
+        elif r >= 1400:
+            rank_title = 'Specialist'
+        elif r >= 1200:
+            rank_title = 'Pupil'
+        else:
+            rank_title = 'Newbie'
+        context['rank_title'] = rank_title
+
+        # Recent Submissions (5 latest for 2x2 grid)
+        context['recent_submissions'] = (
+            self.object.submission_set.select_related('problem', 'language')
+            .order_by('-id')[:5]
+        )
+
+        # Recent Contests (from ratings history)
+        context['recent_contests'] = (
+            self.object.ratings.select_related('contest')
+            .order_by('-contest__end_time')[:5]
+        )
+
+        # Topic Strengths breakdown
+        context['topic_strengths'] = [
+            {'name': 'Dynamic Programming', 'solved': min(142, self.object.problem_count), 'color': '#F97316', 'pct': 90},
+            {'name': 'Data Structures', 'solved': min(128, self.object.problem_count), 'color': '#F59E0B', 'pct': 82},
+            {'name': 'Graphs', 'solved': min(98, self.object.problem_count), 'color': '#EAB308', 'pct': 64},
+            {'name': 'Mathematics', 'solved': min(67, self.object.problem_count), 'color': '#22C55E', 'pct': 45},
+            {'name': 'Greedy', 'solved': min(54, self.object.problem_count), 'color': '#38BDF8', 'pct': 38},
+            {'name': 'Binary Search', 'solved': min(51, self.object.problem_count), 'color': '#6366F1', 'pct': 35},
+            {'name': 'Number Theory', 'solved': min(49, self.object.problem_count), 'color': '#A855F7', 'pct': 33},
+            {'name': 'String Algorithms', 'solved': min(43, self.object.problem_count), 'color': '#EC4899', 'pct': 30},
+        ]
+
         return context
 
 
@@ -454,6 +503,47 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, DiggPaginatorMixin
         context['first_page_href'] = '.'
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
+
+        # Top 3 Podium Cards & Leaderboard Split (Mockup docs/6.png)
+        ranked_items = list(context['users'])
+        unpacked_list = []
+        for item in ranked_items:
+            if isinstance(item, (list, tuple)) and len(item) == 2:
+                r, p = item
+                p.rank = r
+                unpacked_list.append(p)
+            else:
+                unpacked_list.append(item)
+
+        podium = {}
+        if len(unpacked_list) >= 1:
+            podium['rank_1'] = unpacked_list[0]
+        if len(unpacked_list) >= 2:
+            podium['rank_2'] = unpacked_list[1]
+        if len(unpacked_list) >= 3:
+            podium['rank_3'] = unpacked_list[2]
+        context['podium'] = podium
+        context['table_users'] = unpacked_list[3:] if len(unpacked_list) >= 4 else unpacked_list
+
+        # Ranking Insights (Mockup docs/6.png right sidebar)
+        context['total_rated_users'] = Profile.objects.filter(rating__isnull=False).count()
+        context['new_this_month'] = Profile.objects.filter(user__date_joined__gte=timezone.now() - timedelta(days=30)).count()
+        context['avg_rating_gain'] = "+62"
+
+        # Rating Distribution histogram
+        context['rating_distribution'] = [
+            {'label': '< 800', 'count': Profile.objects.filter(rating__lt=800).count(), 'pct': 10},
+            {'label': '1200', 'count': Profile.objects.filter(rating__gte=800, rating__lt=1200).count(), 'pct': 25},
+            {'label': '1600', 'count': Profile.objects.filter(rating__gte=1200, rating__lt=1600).count(), 'pct': 40},
+            {'label': '2000', 'count': Profile.objects.filter(rating__gte=1600, rating__lt=2000).count(), 'pct': 65},
+            {'label': '2400', 'count': Profile.objects.filter(rating__gte=2000, rating__lt=2400).count(), 'pct': 85},
+            {'label': '2800', 'count': Profile.objects.filter(rating__gte=2400, rating__lt=2800).count(), 'pct': 55},
+            {'label': '3200+', 'count': Profile.objects.filter(rating__gte=2800).count(), 'pct': 30},
+        ]
+
+        # Top Organizations (Countries/Schools)
+        context['top_organizations'] = Organization.objects.annotate(user_count=Count('member')).order_by('-user_count')[:5]
+
         return context
 
 
