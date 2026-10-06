@@ -94,7 +94,7 @@ class NewProblemTicketView(ProblemMixin, TitleMixin, NewTicketView):
     def get_content_title(self):
         return mark_safe(escape(_('New ticket for %s')) %
                          format_html('<a href="{0}">{1}</a>', reverse('problem_detail', args=[self.object.code]),
-                                     self.object.translated_name(self.request.LANGUAGE_CODE)))
+                                     self.object.name))
 
     def form_valid(self, form):
         if not self.object.is_accessible_by(self.request.user):

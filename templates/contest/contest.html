@@ -207,7 +207,7 @@
 
                     <!-- Markdown & KaTeX Statement Body -->
                     <div class="statement-body-markdown" id="statement-body-markdown">
-                        {% cache 86400 'contest_problem_html' active_problem.id MATH_ENGINE LANGUAGE_CODE %}
+                        {% cache 86400 'contest_problem_html' active_problem.id MATH_ENGINE %}
                             {{ active_problem.description|markdown(active_problem.markdown_style, MATH_ENGINE)|reference|str|safe }}
                         {% endcache %}
                     </div>

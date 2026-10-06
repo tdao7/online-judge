@@ -389,17 +389,12 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
             self.logger.info('Rendering PDF in %s: %s', language, problem.code)
 
             with translation.override(language):
-                try:
-                    trans = problem.translations.get(language=language)
-                except ProblemTranslation.DoesNotExist:
-                    trans = None
-
-                problem_name = trans.name if trans else problem.name
+                problem_name = problem.name
                 return render_pdf(
                     html=get_template('problem/raw.html').render({
                         'problem': problem,
                         'problem_name': problem_name,
-                        'description': trans.description if trans else problem.description,
+                        'description': problem.description,
                         'url': request.build_absolute_uri(),
                     }).replace('"//', '"https://').replace("'//", "'https://"),
                     title=problem_name,
@@ -447,10 +442,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         if not self.in_contest:
             queryset = queryset.add_i18n_name(self.request.LANGUAGE_CODE)
             sort_key = self.order.lstrip('-')
-            if sort_key in self.sql_sort:
+            if sort_key in self.sql_sort or sort_key == 'name':
                 queryset = queryset.order_by(self.order, 'id')
-            elif sort_key == 'name':
-                queryset = queryset.order_by(self.order.replace('name', 'i18n_name'), 'id')
             elif sort_key == 'group':
                 queryset = queryset.order_by(self.order + '__name', 'id')
             elif sort_key == 'editorial':
@@ -488,11 +481,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         queryset = self.profile.current_contest.contest.contest_problems.select_related('problem__group') \
             .defer('problem__description').order_by('problem__code') \
             .annotate(user_count=Count('submission__participation', distinct=True)) \
-            .annotate(i18n_translation=FilteredRelation(
-                'problem__translations', condition=Q(problem__translations__language=self.request.LANGUAGE_CODE),
-            )).annotate(i18n_name=Coalesce(
-                F('i18n_translation__name'), F('problem__name'), output_field=CharField(),
-            )).order_by('order')
+            .annotate(i18n_name=F('problem__name')).order_by('order')
         return [{
             'id': p['problem_id'],
             'code': p['problem__code'],
@@ -779,12 +768,12 @@ class ProblemSubmit(LoginRequiredMixin, ProblemMixin, TitleMixin, SingleObjectFo
             escape(_('Submit to %s')) % format_html(
                 '<a href="{0}">{1}</a>',
                 reverse('problem_detail', args=[self.object.code]),
-                self.object.translated_name(self.request.LANGUAGE_CODE),
+                self.object.name,
             ),
         )
 
     def get_title(self):
-        return _('Submit to %s') % self.object.translated_name(self.request.LANGUAGE_CODE)
+        return _('Submit to %s') % self.object.name
 
     def get_initial(self):
         initial = {'language': self.default_language}

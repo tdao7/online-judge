@@ -16,7 +16,7 @@ import django
 django.setup()
 
 from django.utils import timezone
-from judge.models import Contest, Problem, ContestProblem, ProblemType, ProblemGroup, Language, Judge, ProblemTranslation
+from judge.models import Contest, Problem, ContestProblem, ProblemType, ProblemGroup, Language, Judge
 
 now = timezone.now()
 

@@ -22,18 +22,13 @@ class Command(BaseCommand):
             print('Bad problem code')
             return
 
-        try:
-            trans = problem.translations.get(language=options['language'])
-        except ProblemTranslation.DoesNotExist:
-            trans = None
-
         with open(problem.code + '.pdf', 'wb') as f, translation.override(options['language']):
-            problem_name = problem.name if trans is None else trans.name
+            problem_name = problem.name
             f.write(render_pdf(
                 html=get_template('problem/raw.html').render({
                     'problem': problem,
                     'problem_name': problem_name,
-                    'description': problem.description if trans is None else trans.description,
+                    'description': problem.description,
                     'url': '',
                 }).replace('"//', '"https://').replace("'//", "'https://"),
                 title=problem_name,

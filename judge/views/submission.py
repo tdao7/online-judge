@@ -71,7 +71,7 @@ class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, Deta
             message = escape(_('Permission denied. Solve %(problem)s in order to view it.')) % {
                 'problem': format_html('<a href="{0}">{1}</a>',
                                        reverse('problem_detail', args=[problem.code]),
-                                       problem.translated_name(self.request.LANGUAGE_CODE)),
+                                       problem.name),
             }
             return generic_message(self.request, _("Can't access submission"), mark_safe(message), status=403)
         else:
@@ -80,7 +80,7 @@ class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, Deta
     def get_title(self):
         submission = self.object
         return _('Submission of %(problem)s by %(user)s') % {
-            'problem': submission.problem.translated_name(self.request.LANGUAGE_CODE),
+            'problem': submission.problem.name,
             'user': submission.user.display_name,
         }
 
@@ -89,7 +89,7 @@ class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, Deta
         return mark_safe(escape(_('Submission of %(problem)s by %(user)s')) % {
             'problem': format_html('<a href="{0}">{1}</a>',
                                    reverse('problem_detail', args=[submission.problem.code]),
-                                   submission.problem.translated_name(self.request.LANGUAGE_CODE)),
+                                   submission.problem.name),
             'user': format_html('<a href="{0}">{1}</a>',
                                 reverse('user_page', args=[submission.user.user.username]),
                                 submission.user.display_name),
@@ -263,10 +263,6 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         queryset = Submission.objects.all()
         use_straight_join(queryset)
         queryset = submission_related(queryset.order_by('-id'))
-        if self.show_problem:
-            queryset = queryset.prefetch_related(Prefetch('problem__translations',
-                                                          queryset=ProblemTranslation.objects.filter(
-                                                              language=self.request.LANGUAGE_CODE), to_attr='_trans'))
         if self.in_contest:
             queryset = queryset.filter(contest_object=self.contest)
             if not self.contest.can_see_full_scoreboard(self.request.user):
@@ -485,7 +481,7 @@ class ProblemSubmissionsBase(SubmissionsListBase):
         if 'problem' not in kwargs:
             raise ImproperlyConfigured('Must pass a problem')
         self.problem = get_object_or_404(Problem, code=kwargs['problem'])
-        self.problem_name = self.problem.translated_name(self.request.LANGUAGE_CODE)
+        self.problem_name = self.problem.name
         return super(ProblemSubmissionsBase, self).get(request, *args, **kwargs)
 
     def get_all_submissions_page(self):
@@ -568,7 +564,7 @@ def single_submission(request):
         'editable_problem_ids': user_editable_ids(request.profile) if authenticated else [],
         'tester_problem_ids': user_tester_ids(request.profile) if authenticated else [],
         'show_problem': show_problem,
-        'problem_name': show_problem and submission.problem.translated_name(request.LANGUAGE_CODE),
+        'problem_name': show_problem and submission.problem.name,
         'profile_id': request.profile.id if authenticated else 0,
     })
 

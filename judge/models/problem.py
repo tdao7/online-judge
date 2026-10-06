@@ -82,9 +82,7 @@ class TranslatedProblemQuerySet(SearchQuerySet):
         super(TranslatedProblemQuerySet, self).__init__(('code', 'name', 'description'), **kwargs)
 
     def add_i18n_name(self, language):
-        return self.annotate(i18n_translation=FilteredRelation(
-            'translations', condition=Q(translations__language=language),
-        )).annotate(i18n_name=Coalesce(F('i18n_translation__name'), F('name'), output_field=models.CharField()))
+        return self.annotate(i18n_name=F('name'))
 
 
 class SubmissionSourceAccess:
@@ -358,22 +356,12 @@ class Problem(models.Model):
     def usable_languages(self):
         return self.allowed_languages.filter(judges__in=self.judges.filter(online=True)).distinct()
 
-    def translated_name(self, language):
-        if language in self._translated_name_cache:
-            return self._translated_name_cache[language]
-        # Hits database despite prefetch_related.
-        try:
-            name = self.translations.filter(language=language).values_list('name', flat=True)[0]
-        except IndexError:
-            name = self.name
-        self._translated_name_cache[language] = name
-        return name
+    def translated_name(self, language=None):
+        return self.name
 
     @property
     def i18n_name(self):
-        if self._i18n_name is None:
-            self._i18n_name = self._trans[0].name if self._trans else self.name
-        return self._i18n_name
+        return self.name
 
     @i18n_name.setter
     def i18n_name(self, value):
