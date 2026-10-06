@@ -160,7 +160,7 @@ def run_tests(remote_url=None):
     # Screen 5: Live Contest Workspace
     status, html = runner.fetch_url('/contest/wcc2026')
     runner.assert_test(status == 200, "4.12 Screen 5 (Live Contest): GET /contest/wcc2026 HTTP 200 OK")
-    runner.assert_test('contest-workspace' in html or 'contest-problems' in html or 'wcc2026' in html.lower(), "4.13 Screen 5: Contest workspace elements present")
+    runner.assert_test('contest-split-layout' in html and 'app-footer' not in html, "4.13 Screen 5: Contest workspace elements present and footer suppressed")
 
     # Screen 6: Rankings
     status, html = runner.fetch_url('/users/')
@@ -186,13 +186,16 @@ def run_tests(remote_url=None):
             ('/problem/aplusb', 'aplusb', 'Remote /problem/aplusb renders Problem Workspace'),
             ('/submissions/', 'submission', 'Remote /submissions/ renders Submissions'),
             ('/contests/', 'contest', 'Remote /contests/ renders Contests'),
-            ('/contest/wcc2026', 'contest', 'Remote /contest/wcc2026 renders Live Contest'),
+            ('/contest/wcc2026', 'contest-split-layout', 'Remote /contest/wcc2026 renders Live Contest'),
             ('/users/', 'rankings', 'Remote /users/ renders Rankings'),
             ('/user/tourist', 'tourist', 'Remote /user/tourist renders User Profile'),
         ]
         for idx, (path, term, desc) in enumerate(remote_checks, start=1):
             st, ct = runner.fetch_url(path)
-            runner.assert_test(st == 200 and term in ct.lower(), f"5.{idx} {desc} (HTTP {st})")
+            passed = st == 200 and term in ct.lower()
+            if path == '/contest/wcc2026':
+                passed = passed and 'contest-split-layout' in ct and 'app-footer' not in ct
+            runner.assert_test(passed, f"5.{idx} {desc} (HTTP {st})")
 
     total = runner.passed + runner.failed
     print("\n" + "=" * 60)

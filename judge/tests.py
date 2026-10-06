@@ -23,21 +23,23 @@ class Milestone2AppShellTests(TestCase):
         self.profile = Profile.objects.create(user=self.user, language=self.language)
 
     def test_desktop_wallpaper_and_mac_window_shell(self):
-        """Verify wide desktop wallpaper container, floating window, and traffic light controls."""
+        """Verify presence of sticky top navbar and app-main canvas, and complete absence of desktop wallpaper / traffic lights."""
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
         content = response.content.decode('utf-8')
 
-        # Wallpaper and floating window
-        self.assertIn('desktop-wallpaper', content)
-        self.assertIn('mac-app-window', content)
-        self.assertIn('mac-window-topbar', content)
+        # Assert presence of enterprise app shell components
+        self.assertIn('app-navbar', content)
+        self.assertIn('app-main', content)
+        self.assertIn('top-nav-links', content)
+        self.assertIn('mobile-nav-toggle', content)
+        self.assertIn('brand-accent-o', content)
 
-        # Traffic light controls
-        self.assertIn('traffic-lights', content)
-        self.assertIn('traffic-light traffic-red', content)
-        self.assertIn('traffic-light traffic-yellow', content)
-        self.assertIn('traffic-light traffic-green', content)
+        # Assert strict absence of legacy macOS floating-window & wallpaper artifacts
+        self.assertNotIn('desktop-wallpaper', content)
+        self.assertNotIn('mac-app-window', content)
+        self.assertNotIn('mac-window-topbar', content)
+        self.assertNotIn('traffic-lights', content)
 
     def test_global_search_and_quick_search_modal(self):
         """Verify global ⌘K search bar pill and quick search modal overlay."""
@@ -57,7 +59,7 @@ class Milestone2AppShellTests(TestCase):
         self.assertIn('modal-search-close', content)
 
     def test_sidebar_navigation_and_brand_logo(self):
-        """Verify 200px sidebar with DMOJ brand logo and navigation menu."""
+        """Verify mobile drawer and brand logo."""
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
         content = response.content.decode('utf-8')
@@ -98,8 +100,11 @@ class Milestone2AppShellTests(TestCase):
                 resp = self.client.get(url)
                 self.assertEqual(resp.status_code, 200)
                 content = resp.content.decode('utf-8')
-                self.assertIn('mac-app-window', content)
+                self.assertIn('app-main', content)
+                self.assertIn('app-navbar', content)
                 self.assertIn('content-body', content)
+                self.assertNotIn('mac-app-window', content)
+                self.assertNotIn('desktop-wallpaper', content)
 
     def test_app_shell_controller_script_included(self):
         """Verify that app-shell-controller.js asset is included in the base template."""
@@ -109,23 +114,33 @@ class Milestone2AppShellTests(TestCase):
         self.assertIn('app-shell-controller.js', content)
 
     def test_compiled_css_tokens(self):
-        """Verify that compiled resources/style.css contains all required design tokens."""
+        """Verify that compiled resources/style.css contains all required design tokens and no obsolete tokens."""
         css_path = os.path.join(settings.BASE_DIR, 'resources', 'style.css')
         self.assertTrue(os.path.exists(css_path), f"File {css_path} does not exist")
         with open(css_path, 'r', encoding='utf-8') as f:
             css = f.read()
 
         tokens = [
-            '--color-bg-desktop:',
+            '--color-bg-canvas:',
             '--color-primary: #F97316',
-            '--radius-window: 18px',
-            '.mac-app-window',
-            '.traffic-lights',
-            '.app-sidebar',
+            '.app-navbar',
+            '.app-main',
+            '.top-nav-links',
+            '.mobile-drawer',
         ]
         for token in tokens:
             with self.subTest(token=token):
                 self.assertIn(token, css)
+
+        obsolete_tokens = [
+            '--color-bg-desktop:',
+            '--radius-window: 18px',
+            '.mac-app-window',
+            '.traffic-lights',
+        ]
+        for token in obsolete_tokens:
+            with self.subTest(obsolete_token=token):
+                self.assertNotIn(token, css)
 
 
 class Milestone3ScreensTests(TestCase):
@@ -287,3 +302,66 @@ class Milestone3ScreensTests(TestCase):
         })
         self.assertEqual(resp_valid.status_code, 302)
         self.assertIn('/submission/', resp_valid['Location'])
+
+
+class Milestone2CoreWorkspacesPolishTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='polish_user',
+            email='polish@example.com',
+            password='securepassword123',
+        )
+        self.language, _ = Language.objects.get_or_create(
+            key='py3',
+            defaults={'name': 'Python 3', 'common_name': 'Python 3', 'ace': 'python'}
+        )
+        self.profile = Profile.objects.create(user=self.user, language=self.language)
+        self.group, _ = ProblemGroup.objects.get_or_create(name='Polish Group', defaults={'full_name': 'Polish Group'})
+        self.problem, _ = Problem.objects.get_or_create(
+            code='aplusb',
+            defaults={
+                'name': 'A Plus B',
+                'points': 100.0,
+                'is_public': True,
+                'group': self.group,
+                'time_limit': 1.0,
+                'memory_limit': 65536,
+                'description': 'Compute A + B.',
+            }
+        )
+
+    def test_dashboard_workspace_title_and_hr_suppressed(self):
+        """Dashboard: Verify legacy <h2>Dashboard</h2> and hr ruler are suppressed while hero card renders."""
+        resp = self.client.get('/')
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode('utf-8')
+        self.assertNotIn('content-title-ruler', content)
+        self.assertNotIn('>Dashboard</h2>', content)
+        self.assertIn('dashboard-hero-card', content)
+        self.assertIn('dashboard-metrics-strip', content)
+
+    def test_problem_workspace_footer_suppressed(self):
+        """Problem Workspace: Verify app-footer is suppressed for edge-to-edge coding layout."""
+        resp = self.client.get('/problem/aplusb')
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode('utf-8')
+        self.assertNotIn('app-footer', content)
+        self.assertIn('workspace-split-container', content)
+        self.assertIn('statement-pane', content)
+        self.assertIn('editor-pane', content)
+
+    def test_auth_workspaces_clean_canvas_and_headers_suppressed(self):
+        """Auth Workspaces: Verify legacy content-title-ruler and redundant h2 headers are suppressed."""
+        for path, card_id in [
+            ('/accounts/login/', 'auth-login-card'),
+            ('/accounts/register/', 'auth-register-card'),
+            ('/accounts/password/reset/', 'auth-reset-card'),
+        ]:
+            with self.subTest(path=path):
+                resp = self.client.get(path)
+                self.assertEqual(resp.status_code, 200)
+                content = resp.content.decode('utf-8')
+                self.assertNotIn('content-title-ruler', content)
+                self.assertIn(card_id, content)
+                self.assertIn('auth-page-container', content)

@@ -11,6 +11,20 @@
 {% block js_media %}
     {{ super() }}
     <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
+    <script>
+        window.problemSamples = {{ sample_testcases_json|default('[]')|safe }};
+        window.judgeI18n = {
+            draftSaved: "{{ _('Draft saved') }}",
+            editing: "{{ _('Editing...') }}",
+            saving: "{{ _('Saving...') }}",
+            resetConfirm: "{{ _('Reset code to starter template? Any unsaved edits for %s will be discarded.') }}",
+            running: "{{ _('Running...') }}",
+            submitting: "{{ _('Submitting...') }}",
+            emptySource: "{{ _('Please enter source code before submitting.') }}",
+            codeLimit: "{{ _('Your source code must contain at most 65536 characters.') }}",
+            noSubmissions: "{{ _('No submissions recorded yet.') }}"
+        };
+    </script>
     <script src="{{ static('problem-statement.js') }}"></script>
     <script src="{{ static('problem-workspace.js') }}"></script>
     {% if enable_comments %}
@@ -20,6 +34,7 @@
 
 {% block title_row %}{# Overridden for modern workspace header #}{% endblock %}
 {% block title_ruler %}{# Overridden #}{% endblock %}
+{% block footer %}{# Suppressed for full-height split coding workspace #}{% endblock %}
 
 {% block body %}
 <div class="problem-workspace-wrap" id="problem-workspace-wrap">

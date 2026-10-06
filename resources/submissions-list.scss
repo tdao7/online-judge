@@ -28,6 +28,36 @@
     min-width: 260px;
   }
 
+  .problem-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-muted, #6B7280);
+    margin-bottom: 8px;
+
+    .breadcrumb-link {
+      color: var(--color-primary, #F97316);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.15s ease;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    .breadcrumb-sep {
+      color: var(--color-text-subtle, #9CA3AF);
+      font-size: 10px;
+    }
+
+    .breadcrumb-current {
+      color: var(--color-text-main, #111827);
+      font-weight: 600;
+    }
+  }
+
   .submissions-heading {
     font-size: 28px;
     font-weight: 700;
@@ -35,12 +65,52 @@
     margin: 0;
     line-height: 1.2;
     letter-spacing: -0.02em;
+
+    .heading-sub-scope {
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--color-text-muted, #6B7280);
+      margin-left: 4px;
+    }
   }
 
   .submissions-subheading {
     font-size: 14px;
     color: var(--color-text-muted, #6B7280);
     margin: 6px 0 0;
+  }
+
+  .submissions-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-back-problem {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    background: var(--color-primary, #F97316);
+    color: #FFFFFF !important;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--radius-pill, 9999px);
+    text-decoration: none;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 3px rgba(249, 115, 22, 0.25);
+
+    i {
+      font-size: 13px;
+    }
+
+    &:hover {
+      background: var(--color-primary-hover, #EA580C);
+      color: #FFFFFF;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.3);
+    }
   }
 
   // Quick navigation pills (All / Mine / Best / Admin)
@@ -462,11 +532,17 @@
   border-collapse: collapse;
   text-align: left;
 
+  thead.thead-empty-hidden {
+    display: none !important;
+  }
+
   thead tr {
+    display: table-row !important;
     background: var(--color-bg-card-subtle, #F9FAFB);
     border-bottom: 1px solid var(--color-border, #E5E7EB);
 
     th {
+      display: table-cell !important;
       padding: 12px 14px;
       font-size: 12px;
       font-weight: 600;
@@ -487,6 +563,7 @@
   }
 
   tbody tr {
+    display: table-row !important;
     border-bottom: 1px solid var(--color-border-subtle, #F3F4F6);
     transition: background-color 0.12s ease;
     cursor: pointer;
@@ -522,6 +599,7 @@
     }
 
     td {
+      display: table-cell !important;
       padding: 12px 14px;
       font-size: 13px;
       color: var(--color-text-secondary, #4B5563);
@@ -688,7 +766,12 @@
   }
 
   // Empty state row
-  .empty-table-cell {
+  tr.empty-table-row {
+    display: table-row !important;
+  }
+
+  td.empty-table-cell {
+    display: table-cell !important;
     padding: 60px 20px;
     text-align: center;
 
@@ -696,7 +779,11 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 8px;
+      margin: 0 auto;
+      box-sizing: border-box;
+      padding: 0 16px;
     }
 
     .empty-state-icon {
@@ -716,6 +803,38 @@
       font-size: 13px;
       color: var(--color-text-muted, #6B7280);
       margin: 0;
+      max-width: 440px;
+      line-height: 1.5;
+    }
+
+    .empty-state-cta {
+      margin-top: 14px;
+    }
+
+    .btn-empty-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 20px;
+      background: var(--color-primary, #F97316);
+      color: #FFFFFF !important;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: var(--radius-md, 8px);
+      text-decoration: none;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 4px rgba(249, 115, 22, 0.2);
+
+      i {
+        font-size: 14px;
+      }
+
+      &:hover {
+        background: var(--color-primary-hover, #EA580C);
+        color: #FFFFFF;
+        box-shadow: 0 4px 8px rgba(249, 115, 22, 0.3);
+        transform: translateY(-1px);
+      }
     }
   }
 }
@@ -849,10 +968,18 @@
 
 // ----------------------------------------------------------------------------
 // 7. Dark Mode Overrides
-// ----------------------------------------------------------------------------
 [data-theme="dark"], body.theme-dark {
   .submissions-header {
-    .submissions-heading { color: #F4F4F5; }
+    .problem-breadcrumb {
+      color: #A1A1AA;
+      .breadcrumb-link { color: #F97316; }
+      .breadcrumb-sep { color: #71717A; }
+      .breadcrumb-current { color: #F4F4F5; }
+    }
+    .submissions-heading {
+      color: #F4F4F5;
+      .heading-sub-scope { color: #A1A1AA; }
+    }
     .submissions-subheading { color: #A1A1AA; }
 
     .submissions-nav-pills {
@@ -868,6 +995,12 @@
         }
       }
     }
+  }
+
+  .empty-table-cell {
+    .empty-state-icon { color: #71717A; }
+    .empty-state-title { color: #F4F4F5; }
+    .empty-state-subtitle { color: #A1A1AA; }
   }
 
   .submissions-filter-bar {

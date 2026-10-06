@@ -6,6 +6,9 @@
     <link rel="stylesheet" href="{{ static('auth-workspace.css') }}">
 {% endblock %}
 
+{% block title_row %}{# Suppressed legacy h2 header #}{% endblock %}
+{% block title_ruler %}{# Suppressed legacy hr ruler #}{% endblock %}
+
 {% block body %}
 <div class="auth-page-container" id="auth-login-container">
     <div class="auth-card" id="auth-login-card">

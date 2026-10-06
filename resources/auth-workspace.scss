@@ -1,14 +1,15 @@
 // VCoder Online Judge — Modern Auth Workspaces
 // Milestone 7: Auth Workspaces (R4)
 
-@import "vars-vcoder";
+@use "vars" as *;
 
 .auth-page-container {
-    min-height: calc(100vh - 240px);
+    min-height: calc(100vh - 160px);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 3rem 1.5rem;
+    padding: 2.5rem 1.5rem;
+    box-sizing: border-box;
 }
 
 .auth-card {

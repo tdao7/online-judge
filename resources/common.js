@@ -43,13 +43,12 @@ $(function () {
         };
 
         evt = evt || window.event;
-        if (evt.type in evtMap)
-            document.body.className = evtMap[evt.type];
-        else
-            document.body.className = this[hidden] ? 'window-hidden' : 'window-visible';
+        var newClass = (evt.type in evtMap) ? evtMap[evt.type] : (this[hidden] ? h : v);
+        document.body.classList.remove(v, h);
+        document.body.classList.add(newClass);
 
         if ('$' in window)
-            $(window).trigger('dmoj:' + document.body.className);
+            $(window).trigger('dmoj:' + newClass);
     }
 
     // set the initial state (but only if browser supports the Page Visibility API)

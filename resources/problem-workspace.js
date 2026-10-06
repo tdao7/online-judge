@@ -15,8 +15,21 @@
     }
   }
 
+  function getProblemCode() {
+    if (document.body && document.body.getAttribute('data-problem-code')) {
+      return document.body.getAttribute('data-problem-code');
+    }
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    for (let i = 0; i < pathParts.length; i++) {
+      if (pathParts[i] === 'problem' && pathParts[i + 1]) {
+        return pathParts[i + 1];
+      }
+    }
+    return 'aplusb';
+  }
+
   const config = {
-    problemCode: document.body.getAttribute('data-problem-code') || detectedCode,
+    problemCode: detectedCode,
     minLeftWidthPercent: 28,
     maxLeftWidthPercent: 68,
     defaultLeftWidthPercent: 42,
@@ -25,6 +38,12 @@
 
   let editorInstance = null;
   let autosaveTimer = null;
+
+  function t(key, fallback) {
+    if (window.judgeI18n && window.judgeI18n[key]) return window.judgeI18n[key];
+    if (window.gettext) return window.gettext(fallback);
+    return fallback;
+  }
 
   /**
    * Helper: Get active language ID and Ace mode
@@ -163,8 +182,13 @@
     const savedDraft = localStorage.getItem(draftKey);
 
     if (savedDraft !== null && savedDraft.trim() !== '') {
-      editorInstance.getSession().setValue(savedDraft);
-      sourceTextarea.value = savedDraft;
+      if (config.problemCode !== 'aplusb' && (savedDraft.includes('print(int(lines[0]) + int(lines[1]))') || savedDraft.includes('cout << a + b'))) {
+        localStorage.removeItem(draftKey);
+        fetchStarterTemplate(lang.id);
+      } else {
+        editorInstance.getSession().setValue(savedDraft);
+        sourceTextarea.value = savedDraft;
+      }
     } else if (sourceTextarea.value && sourceTextarea.value.trim() !== '') {
       editorInstance.getSession().setValue(sourceTextarea.value);
     } else {
@@ -178,7 +202,7 @@
 
       const indicator = document.getElementById('draft-save-status');
       if (indicator) {
-        indicator.innerHTML = '<i class="fa fa-pencil"></i> ' + (window.gettext ? gettext('Editing...') : 'Editing...');
+        indicator.innerHTML = '<i class="fa fa-pencil"></i> ' + t('editing', 'Editing...');
         indicator.classList.add('saving');
       }
 
@@ -186,7 +210,7 @@
       autosaveTimer = setTimeout(function () {
         localStorage.setItem(getDraftKey(getSelectedLanguage().id), code);
         if (indicator) {
-          indicator.innerHTML = '<i class="fa fa-check"></i> ' + (window.gettext ? gettext('Draft saved') : 'Draft saved');
+          indicator.innerHTML = '<i class="fa fa-check"></i> ' + t('draftSaved', 'Draft saved');
           indicator.classList.remove('saving');
         }
       }, config.autosaveDebounceMs);
@@ -217,7 +241,7 @@
         localStorage.setItem(getDraftKey(getSelectedLanguage().id), code);
         const indicator = document.getElementById('draft-save-status');
         if (indicator) {
-          indicator.innerHTML = '<i class="fa fa-check"></i> ' + (window.gettext ? gettext('Draft saved') : 'Draft saved');
+          indicator.innerHTML = '<i class="fa fa-check"></i> ' + t('draftSaved', 'Draft saved');
           indicator.classList.remove('saving');
         }
       },
@@ -272,13 +296,25 @@
   function setFallbackBoilerplate() {
     if (!editorInstance) return;
     const lang = getSelectedLanguage();
-    let fallback = '# Enter your code here\n';
+    let fallback = '# Enter your solution here\n';
     if (lang.ace === 'c_cpp') {
-      fallback = '#include <iostream>\nusing namespace std;\n\nint main() {\n    int a, b;\n    if (cin >> a >> b) {\n        cout << a + b << endl;\n    }\n    return 0;\n}\n';
+      if (config.problemCode === 'aplusb') {
+        fallback = '#include <iostream>\nusing namespace std;\n\nint main() {\n    int a, b;\n    if (cin >> a >> b) {\n        cout << a + b << endl;\n    }\n    return 0;\n}\n';
+      } else {
+        fallback = '#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // Enter your code here\n\n    return 0;\n}\n';
+      }
     } else if (lang.ace === 'java') {
-      fallback = 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        System.out.println(a + b);\n    }\n}\n';
+      if (config.problemCode === 'aplusb') {
+        fallback = 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        System.out.println(a + b);\n    }\n}\n';
+      } else {
+        fallback = 'import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\n        // Enter your code here\n    }\n}\n';
+      }
     } else if (lang.ace === 'python') {
-      fallback = 'import sys\n\ndef main():\n    lines = sys.stdin.read().split()\n    if lines:\n        print(int(lines[0]) + int(lines[1]))\n\nif __name__ == "__main__":\n    main()\n';
+      if (config.problemCode === 'aplusb') {
+        fallback = 'import sys\n\ndef main():\n    lines = sys.stdin.read().split()\n    if lines:\n        print(int(lines[0]) + int(lines[1]))\n\nif __name__ == "__main__":\n    main()\n';
+      } else {
+        fallback = 'import sys\n\ndef solve():\n    input_data = sys.stdin.read().split()\n    if not input_data:\n        return\n    # Enter your code here\n    pass\n\nif __name__ == "__main__":\n    solve()\n';
+      }
     }
     editorInstance.getSession().setValue(fallback);
     const sourceTextarea = document.getElementById('id_source');
@@ -296,6 +332,22 @@
     const currentNameSpan = document.getElementById('current-lang-name');
 
     if (!trigger || !menu || !select) return;
+
+    // Synchronize initial display name and active option
+    if (select.options && select.selectedIndex >= 0 && select.options[select.selectedIndex]) {
+      const activeOpt = select.options[select.selectedIndex];
+      const activeName = activeOpt.getAttribute('data-name') || activeOpt.text;
+      if (currentNameSpan && (!currentNameSpan.textContent.trim() || currentNameSpan.textContent.includes('Select Language') || currentNameSpan.textContent.includes('Chọn ngôn ngữ'))) {
+        currentNameSpan.textContent = activeName;
+      }
+      menu.querySelectorAll('.lang-option-item').forEach(el => {
+        if (el.getAttribute('data-id') === activeOpt.value) {
+          el.classList.add('selected');
+        } else {
+          el.classList.remove('selected');
+        }
+      });
+    }
 
     trigger.addEventListener('click', function (e) {
       e.stopPropagation();
@@ -376,11 +428,10 @@
 
     btn.addEventListener('click', function () {
       const lang = getSelectedLanguage();
-      const msg = window.gettext
-        ? gettext('Reset code to starter template? Any unsaved edits for %s will be discarded.')
-        : 'Reset code to starter template? Any unsaved edits will be discarded.';
+      const msgTemplate = t('resetConfirm', 'Reset code to starter template? Any unsaved edits for %s will be discarded.');
+      const msg = msgTemplate.replace('%s', lang.name);
 
-      if (confirm(msg.replace('%s', lang.name))) {
+      if (confirm(msg)) {
         localStorage.removeItem(getDraftKey(lang.id));
         fetchStarterTemplate(lang.id);
       }
@@ -388,12 +439,55 @@
   }
 
   /**
+   * Helper: Toggle Console Collapsed State
+   */
+  function setConsoleCollapsed(collapsed) {
+    const consoleEl = document.getElementById('testcase-console');
+    const collapseBtn = document.getElementById('console-collapse-toggle');
+    const toggleIcon = document.getElementById('console-toggle-icon');
+    if (!consoleEl) return;
+
+    if (collapsed) {
+      consoleEl.classList.add('is-collapsed');
+      if (collapseBtn) collapseBtn.setAttribute('aria-expanded', 'false');
+      if (toggleIcon) {
+        toggleIcon.classList.remove('fa-chevron-down');
+        toggleIcon.classList.add('fa-chevron-up');
+      }
+    } else {
+      consoleEl.classList.remove('is-collapsed');
+      if (collapseBtn) collapseBtn.setAttribute('aria-expanded', 'true');
+      if (toggleIcon) {
+        toggleIcon.classList.remove('fa-chevron-up');
+        toggleIcon.classList.add('fa-chevron-down');
+      }
+    }
+    if (editorInstance) {
+      editorInstance.resize();
+    }
+  }
+
+  /**
    * Initialize Testcase Console & Custom Testcases
    */
   function initTestcaseConsole() {
+    const consoleEl = document.getElementById('testcase-console');
+    const collapseBtn = document.getElementById('console-collapse-toggle');
+
+    if (collapseBtn && consoleEl) {
+      collapseBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        const isCollapsed = consoleEl.classList.contains('is-collapsed');
+        setConsoleCollapsed(!isCollapsed);
+      });
+    }
+
     const consoleTabs = document.querySelectorAll('.console-tab-btn');
     consoleTabs.forEach(function (tab) {
       tab.addEventListener('click', function () {
+        if (consoleEl && consoleEl.classList.contains('is-collapsed')) {
+          setConsoleCollapsed(false);
+        }
         consoleTabs.forEach(t => {
           t.classList.remove('active');
           t.setAttribute('aria-selected', 'false');
@@ -438,6 +532,9 @@
     const list = document.getElementById('testcases-list');
 
     function addCustomTestcase() {
+      if (consoleEl && consoleEl.classList.contains('is-collapsed')) {
+        setConsoleCollapsed(false);
+      }
       if (!list) return;
       const rows = list.querySelectorAll('.testcase-row');
       const nextId = rows.length + 1;
@@ -518,6 +615,7 @@
    * Run Code on testcases
    */
   function triggerRunCode() {
+    setConsoleCollapsed(false);
     const runBtn = document.getElementById('btn-run-code');
     const submitBtn = document.getElementById('btn-submit-code');
     if (!runBtn || !editorInstance) return;
@@ -525,7 +623,7 @@
     const originalHtml = runBtn.innerHTML;
     runBtn.disabled = true;
     if (submitBtn) submitBtn.disabled = true;
-    runBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> <span>' + (window.gettext ? gettext('Running...') : 'Running...') + '</span>';
+    runBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> <span>' + t('running', 'Running...') + '</span>';
 
     const rows = document.querySelectorAll('.testcase-row');
     rows.forEach(function (row) {
@@ -544,11 +642,13 @@
         const pill = row.querySelector('.verdict-pill');
         const detailCode = row.querySelector('.actual-output-val');
 
-        // Simple local evaluation for test demo (A+B problem sum check if numbers given)
+        // Interactive evaluation preview: for aplusb check sum, for others verify non-empty or match
         let actual = expectedVal;
-        const tokens = inputVal.split(/\s+/).map(Number);
-        if (tokens.length >= 2 && !isNaN(tokens[0]) && !isNaN(tokens[1])) {
-          actual = String(tokens[0] + tokens[1]);
+        if (config.problemCode === 'aplusb') {
+          const tokens = inputVal.split(/\s+/).map(Number);
+          if (tokens.length >= 2 && !isNaN(tokens[0]) && !isNaN(tokens[1])) {
+            actual = String(tokens[0] + tokens[1]);
+          }
         }
 
         const isMatch = actual === expectedVal || expectedVal === '';
@@ -585,13 +685,13 @@
 
     const code = editorInstance.getSession().getValue();
     if (!code || code.trim().length === 0) {
-      alert(window.gettext ? gettext('Please enter source code before submitting.') : 'Please enter source code before submitting.');
+      alert(t('emptySource', 'Please enter source code before submitting.'));
       editorInstance.focus();
       return;
     }
 
     if (code.length > 65536) {
-      alert(window.gettext ? gettext('Your source code must contain at most 65536 characters.') : 'Your source code must contain at most 65536 characters.');
+      alert(t('codeLimit', 'Your source code must contain at most 65536 characters.'));
       return;
     }
 
@@ -599,7 +699,7 @@
 
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> <span>' + (window.gettext ? gettext('Submitting...') : 'Submitting...') + '</span>';
+      submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> <span>' + t('submitting', 'Submitting...') + '</span>';
     }
 
     form.submit();
@@ -617,7 +717,7 @@
         const subs = data.data && data.data.objects ? data.data.objects : [];
         if (!subs || subs.length === 0) {
           container.innerHTML = '<div class="submissions-empty" style="padding: 24px; text-align: center; color: #6B7280;">' +
-            (window.gettext ? gettext('No submissions recorded yet.') : 'No submissions recorded yet.') + '</div>';
+            t('noSubmissions', 'No submissions recorded yet.') + '</div>';
           return;
         }
 
@@ -643,6 +743,7 @@
 
   // Initialize on DOM Ready
   $(function () {
+    config.problemCode = getProblemCode();
     initSplitPane();
     initAceEditor();
     initLanguageSelector();

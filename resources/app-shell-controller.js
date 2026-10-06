@@ -7,7 +7,6 @@
  * 2. Mobile hamburger drawer navigation & touch swipe-left closing.
  * 3. User profile avatar dropdown menu.
  * 4. Notification bell popover toggle.
- * 5. macOS window traffic light window controls.
  */
 (function (window, document) {
   'use strict';
@@ -46,12 +45,6 @@
    */
   function getElements() {
     return {
-      // Traffic lights
-      trafficClose: queryOne(['#traffic-light-close', '#traffic-dot-close']),
-      trafficMinimize: queryOne(['#traffic-light-min', '#traffic-dot-minimize']),
-      trafficMaximize: queryOne(['#traffic-light-max', '#traffic-dot-maximize']),
-      appWindow: queryOne(['#mac-app-window', '.mac-app-window', '.mac-window']),
-
       // Topbar Search & Mobile Triggers
       globalSearchTrigger: queryOne(['#global-search-trigger', '.header-search-pill', '.search-pill']),
       mobileSearchBtn: queryOne(['#mobile-search-trigger', '#mobile-search-btn']),
@@ -59,7 +52,7 @@
 
       // Quick Search Modal Elements
       searchModalRoot: queryOne(['#global-search-modal', '#quick-search-modal', '.quick-search-modal-root']),
-      searchBackdrop: queryOne(['#quick-search-backdrop', '.mac-modal-backdrop']),
+      searchBackdrop: queryOne(['#quick-search-backdrop', '.modal-backdrop', '.mac-modal-backdrop']),
       searchInput: queryOne(['#modal-search-input', '#quick-search-input']),
       searchResults: queryOne(['#modal-search-results', '#quick-search-results']),
       searchCloseBtn: queryOne(['#modal-search-close', '#quick-search-close-btn']),
@@ -411,34 +404,7 @@
   }
 
   /* ==========================================================================
-     6. macOS Traffic Lights Controls
-     ========================================================================== */
-  function initTrafficLights(el) {
-    if (el.trafficMaximize && el.appWindow) {
-      el.trafficMaximize.addEventListener('click', () => {
-        el.appWindow.classList.toggle('is-fullscreen');
-        el.appWindow.classList.toggle('mac-window-fullscreen');
-      });
-    }
-
-    if (el.trafficMinimize && el.appWindow) {
-      el.trafficMinimize.addEventListener('click', () => {
-        el.appWindow.style.opacity = '0.7';
-        setTimeout(() => {
-          el.appWindow.style.opacity = '1';
-        }, 300);
-      });
-    }
-
-    if (el.trafficClose) {
-      el.trafficClose.addEventListener('click', () => {
-        window.location.href = '/';
-      });
-    }
-  }
-
-  /* ==========================================================================
-     7. Global Event Bindings & Listeners
+     6. Global Event Bindings & Listeners
      ========================================================================== */
   function bindEventListeners() {
     const el = getElements();
@@ -551,6 +517,32 @@
       el.notificationBtn.addEventListener('click', toggleNotificationPopover);
     }
 
+    // Top Language Switcher Dropdown
+    const langTrigger = document.getElementById('top-lang-trigger');
+    const langMenu = document.getElementById('top-lang-menu');
+    const langInput = document.getElementById('top-lang-code');
+    const langForm = document.getElementById('top-lang-form');
+
+    if (langTrigger && langMenu && langInput && langForm) {
+      langTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isShown = langMenu.classList.contains('show');
+        langMenu.classList.toggle('show', !isShown);
+        langTrigger.setAttribute('aria-expanded', !isShown ? 'true' : 'false');
+      });
+
+      langMenu.addEventListener('click', (e) => {
+        const item = e.target.closest('.top-lang-item');
+        if (item) {
+          const langCode = item.getAttribute('data-lang');
+          if (langCode) {
+            langInput.value = langCode;
+            langForm.submit();
+          }
+        }
+      });
+    }
+
     // Click outside to dismiss menus
     document.addEventListener('click', (e) => {
       if (state.userDropdownOpen && el.userDropdownContainer && !el.userDropdownContainer.contains(e.target)) {
@@ -560,6 +552,10 @@
         el.notificationDropdown.classList.remove('show');
         el.notificationBtn?.setAttribute('aria-expanded', 'false');
       }
+      if (langMenu && !langTrigger?.contains(e.target) && !langMenu.contains(e.target)) {
+        langMenu.classList.remove('show');
+        langTrigger?.setAttribute('aria-expanded', 'false');
+      }
     });
 
     // Window resize: auto-close drawer when returning to desktop
@@ -567,15 +563,14 @@
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
-        if (window.innerWidth >= 768 && state.drawerOpen) {
+        if (window.innerWidth >= 1024 && state.drawerOpen) {
           closeDrawer();
         }
       }, 100);
     });
 
-    // Touch Gestures & Window Chrome
+    // Touch Gestures
     initTouchSwipe(el.appSidebar);
-    initTrafficLights(el);
   }
 
   // Initialize

@@ -12,6 +12,7 @@
 </td>
 
 <!-- 2. Problem -->
+{% if show_problem %}
 <td class="col-problem">
     <div class="problem-cell-wrap">
         <a href="{{ url('problem_detail', submission.problem.code) }}"
@@ -21,6 +22,7 @@
         </a>
     </div>
 </td>
+{% endif %}
 
 <!-- 3. User -->
 <td class="col-user">

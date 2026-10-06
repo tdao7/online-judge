@@ -56,7 +56,7 @@
 
     {% if request.user.is_impersonate %}
         <style>
-            .mac-window-topbar {
+            .app-navbar {
                 border-top: 3px solid #893e89 !important;
             }
             .impersonate-indicator {
@@ -169,7 +169,7 @@
     {% endif %}
 </head>
 
-<body{% if perms.judge.test_site %} data-theme="{{ SITE_THEME_NAME }}"{% endif %}>
+<body class="vcoder-platform"{% if perms.judge.test_site %} data-theme="{{ SITE_THEME_NAME }}"{% endif %}>
     <!-- SVG Clip definition for rating stars and badges -->
     <svg width="0" height="0" style="display: block; position: absolute; pointer-events: none;">
         <defs>
@@ -177,28 +177,69 @@
         </defs>
     </svg>
 
-    <!-- Desktop Wallpaper Background -->
-    <div class="desktop-wallpaper">
-        <!-- Centered macOS Floating App Window Shell -->
-        <div class="mac-app-window mac-window" id="mac-app-window">
-            
-            <!-- Window Header Chrome (Top Bar) -->
-            <header class="mac-window-topbar" id="window-topbar">
-                <div class="topbar-left">
-                    <!-- macOS Window Traffic Light Controls -->
-                    <div class="traffic-lights" aria-label="{{ _('Window controls') }}">
-                        <span class="traffic-light traffic-red" id="traffic-light-close" title="{{ _('Close') }}"></span>
-                        <span class="traffic-light traffic-yellow" id="traffic-light-min" title="{{ _('Minimize') }}"></span>
-                        <span class="traffic-light traffic-green" id="traffic-light-max" title="{{ _('Maximize') }}"></span>
-                    </div>
-
-                    <!-- Mobile Hamburger Toggle (hidden on desktop, visible on mobile/tablet) -->
-                    <button type="button" class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="{{ _('Toggle navigation') }}">
+    <!-- Enterprise App Shell Root Layout -->
+    <div class="app-layout" id="app-layout">
+        
+        <!-- 1. Enterprise Sticky Top Navigation Bar (56px) -->
+        <header class="app-navbar" id="app-navbar" role="banner">
+            <div class="navbar-container">
+                <div class="navbar-left">
+                    <!-- Mobile Hamburger Button (< 1024px) -->
+                    <button type="button" class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="{{ _('Toggle navigation') }}" aria-expanded="false">
                         <i class="fa fa-bars" aria-hidden="true"></i>
                     </button>
+
+                    <!-- VCoderLog Brand Logo -->
+                    <div class="navbar-brand">
+                        <a href="{{ url('home') }}" class="navbar-brand-link" title="{{ SITE_LONG_NAME }}">
+                            {% if request.in_contest and request.participation.contest.logo_override_image %}
+                                <img src="{{ request.participation.contest.logo_override_image|camo }}" alt="{{ SITE_NAME }}" class="navbar-brand-img">
+                            {% elif logo_override_image is defined and logo_override_image %}
+                                <img src="{{ logo_override_image|camo }}" alt="{{ SITE_NAME }}" class="navbar-brand-img">
+                            {% else %}
+                                <span class="navbar-brand-text">VCoder<span class="brand-accent-o">Log</span></span>
+                            {% endif %}
+                        </a>
+                    </div>
+
+                    <!-- Desktop Primary Navigation Links (>= 1024px) -->
+                    <nav class="top-nav-links" id="top-nav-links" aria-label="{{ _('Main Navigation') }}">
+                        <ul class="top-nav-list">
+                            <li class="top-nav-item">
+                                <a href="{{ url('home') }}" class="top-nav-link nav-home{% if not nav_tab and (request.path == '/' or request.path == url('home')) %} active{% endif %}">
+                                    <i class="nav-icon fa fa-th-large" aria-hidden="true"></i>
+                                    <span>{{ _('Dashboard') }}</span>
+                                </a>
+                            </li>
+                            <li class="top-nav-item">
+                                <a href="{{ url('problem_list') }}" class="top-nav-link nav-problems{% if request.path.startswith('/problem') %} active{% endif %}">
+                                    <i class="nav-icon fa fa-file-text-o" aria-hidden="true"></i>
+                                    <span>{{ _('Problems') }}</span>
+                                </a>
+                            </li>
+                            <li class="top-nav-item">
+                                <a href="{{ url('contest_list') }}" class="top-nav-link nav-contests{% if request.path.startswith('/contest') %} active{% endif %}">
+                                    <i class="nav-icon fa fa-trophy" aria-hidden="true"></i>
+                                    <span>{{ _('Contests') }}</span>
+                                </a>
+                            </li>
+                            <li class="top-nav-item">
+                                <a href="{{ url('all_submissions') }}" class="top-nav-link nav-submissions{% if request.path.startswith('/submission') or request.path.startswith('/src/') %} active{% endif %}">
+                                    <i class="nav-icon fa fa-play-circle-o" aria-hidden="true"></i>
+                                    <span>{{ _('Submissions') }}</span>
+                                </a>
+                            </li>
+                            <li class="top-nav-item">
+                                <a href="{{ url('user_list') }}" class="top-nav-link nav-rankings{% if request.path.startswith('/user') %} active{% endif %}">
+                                    <i class="nav-icon fa fa-bar-chart" aria-hidden="true"></i>
+                                    <span>{{ _('Rankings') }}</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
                 </div>
 
-                <div class="topbar-right">
+                <div class="navbar-right">
                     <!-- Impersonation Alert Badge (when active) -->
                     {% if request.user.is_impersonate %}
                         <div class="impersonate-indicator" style="display: none;">
@@ -209,7 +250,26 @@
                         </div>
                     {% endif %}
 
-                    <!-- Global ⌘K Search Bar Pill -->
+                    <!-- Contest Countdown Timer Badge (in navbar when inside contest) -->
+                    {% if request.in_contest %}
+                        <div id="contest-info" class="navbar-contest-badge contest-info-pill">
+                            <a href="{{ url('contest_view', request.participation.contest.key) }}" class="contest-badge-link contest-info-link">
+                                <i class="fa fa-trophy contest-icon"></i>
+                                <span class="contest-badge-name contest-name">{{ request.participation.contest.name }}</span>
+                                {% if request.participation.spectate %}
+                                    <span class="contest-mode-pill contest-mode-badge">{{ _('spectating') }}</span>
+                                {% elif request.participation.end_time %}
+                                    <span id="contest-time-remaining" data-secs="{{ request.participation.time_remaining|seconds }}" class="contest-timer-digits">
+                                        {{ request.participation.time_remaining|timedelta("localized") }}
+                                    </span>
+                                {% else %}
+                                    <span class="contest-mode-pill contest-mode-badge">{{ _('virtual') }}</span>
+                                {% endif %}
+                            </a>
+                        </div>
+                    {% endif %}
+
+                    <!-- Global ⌘K Quick Search Bar Pill -->
                     <div class="header-search-wrap">
                         <form action="{{ url('problem_list') }}" method="GET" class="header-search-form" id="header-search-form" role="search">
                             <div class="header-search-pill" id="global-search-trigger" role="button" tabindex="0" title="{{ _('Click or press ⌘K to search') }}">
@@ -218,15 +278,43 @@
                                        name="search"
                                        id="global-search-input"
                                        class="search-input"
-                                       placeholder="{{ _('Search problems, tags, or keywords...') }}"
+                                       placeholder="{{ _('Search problems, tags, contests...') }}"
                                        autocomplete="off"
-                                       aria-label="{{ _('Search problems, tags, or keywords') }}">
+                                       aria-label="{{ _('Search problems, tags, contests') }}">
                                 <span class="kbd-badge" id="search-kbd-badge"><kbd>⌘</kbd><kbd>K</kbd></span>
                             </div>
                         </form>
                     </div>
 
-                    <!-- Notification Bell Icon Button -->
+                    <!-- Top Navigation Language Selector (VI / EN) -->
+                    <div class="header-action-item header-lang-switcher" id="header-lang-switcher">
+                        <form action="{{ url('set_language') }}" method="post" id="top-lang-form" class="top-lang-form">
+                            {% csrf_token %}
+                            <input name="next" type="hidden" value="{{ request.get_full_path() }}">
+                            <input type="hidden" name="language" id="top-lang-code" value="{{ LANGUAGE_CODE }}">
+                            <div class="top-lang-dropdown" id="top-lang-dropdown">
+                                <button type="button" class="top-lang-btn" id="top-lang-trigger" aria-haspopup="true" aria-expanded="false" title="{{ _('Change language') }}">
+                                    <i class="fa fa-globe" aria-hidden="true"></i>
+                                    <span class="top-lang-label">{{ 'VI' if LANGUAGE_CODE == 'vi' else 'EN' }}</span>
+                                    <i class="fa fa-chevron-down top-lang-chevron" aria-hidden="true"></i>
+                                </button>
+                                <ul class="top-lang-menu" id="top-lang-menu" role="menu">
+                                    <li class="top-lang-item{% if LANGUAGE_CODE == 'vi' %} is-active{% endif %}" data-lang="vi" role="menuitem">
+                                        <span class="top-lang-name">Tiếng Việt</span>
+                                        <span class="top-lang-code-pill">VI</span>
+                                        {% if LANGUAGE_CODE == 'vi' %}<i class="fa fa-check top-lang-check" aria-hidden="true"></i>{% endif %}
+                                    </li>
+                                    <li class="top-lang-item{% if LANGUAGE_CODE != 'vi' %} is-active{% endif %}" data-lang="en" role="menuitem">
+                                        <span class="top-lang-name">English</span>
+                                        <span class="top-lang-code-pill">EN</span>
+                                        {% if LANGUAGE_CODE != 'vi' %}<i class="fa fa-check top-lang-check" aria-hidden="true"></i>{% endif %}
+                                    </li>
+                                </ul>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Notification Bell Button -->
                     <div class="header-action-item">
                         <button type="button" class="header-icon-btn notification-bell-btn" id="notification-bell" aria-label="{{ _('Notifications') }}" title="{{ _('Notifications') }}">
                             <i class="fa fa-bell-o" aria-hidden="true"></i>
@@ -295,199 +383,180 @@
                         {% endif %}
                     </div>
                 </div>
-            </header>
+            </div>
+        </header>
 
-            <!-- Window Body Layout (Sidebar + Main Content Area) -->
-            <div class="mac-window-body">
-                
-                <!-- Compact Sidebar Navigation (200px Width) -->
-                <aside id="navigation" class="app-sidebar unselectable" role="navigation" aria-label="{{ _('Main Navigation') }}">
-                    <!-- Sidebar Brand Logo Header -->
-                    <div class="sidebar-brand">
-                        <a href="{{ url('home') }}" class="sidebar-brand-link" title="{{ SITE_LONG_NAME }}">
-                            {% if request.in_contest and request.participation.contest.logo_override_image %}
-                                <img src="{{ request.participation.contest.logo_override_image|camo }}" alt="{{ SITE_NAME }}" class="sidebar-brand-img">
-                            {% elif logo_override_image is defined and logo_override_image %}
-                                <img src="{{ logo_override_image|camo }}" alt="{{ SITE_NAME }}" class="sidebar-brand-img">
-                            {% else %}
-                                <span class="sidebar-brand-text">DM<span class="brand-accent-o">O</span>J</span>
-                            {% endif %}
-                        </a>
-                    </div>
-
-                    <!-- Sidebar Navigation Items List -->
-                    <ul id="nav-list" class="sidebar-nav-list">
-                        <!-- Dashboard Item -->
-                        <li class="sidebar-nav-item home-menu-item">
-                            <a href="{{ url('home') }}" class="sidebar-nav-link nav-home{% if not nav_tab and (request.path == '/' or request.path == url('home')) %} active{% endif %}">
-                                <i class="nav-icon fa fa-th-large" aria-hidden="true"></i>
-                                <span class="nav-label">{{ _('Dashboard') }}</span>
-                            </a>
-                        </li>
-
-                        <!-- Dynamic MPTT Navigation Tree -->
-                        {% if nav_bar %}
-                            {% for node in mptt_tree(nav_bar) recursive %}
-                                {% set nav_key = node.key|lower %}
-                                <li class="sidebar-nav-item">
-                                    <a href="{{ node.path }}" class="sidebar-nav-link nav-{{ node.key }}{% if node.key in nav_tab %} active{% endif %}">
-                                        {% if nav_key in ['problems', 'problem'] %}
-                                            <i class="nav-icon fa fa-file-text-o" aria-hidden="true"></i>
-                                        {% elif nav_key in ['submit', 'submissions', 'submission'] %}
-                                            <i class="nav-icon fa fa-play-circle-o" aria-hidden="true"></i>
-                                        {% elif nav_key in ['contest', 'contests'] %}
-                                            <i class="nav-icon fa fa-trophy" aria-hidden="true"></i>
-                                        {% elif nav_key in ['rankings', 'ranking'] %}
-                                            <i class="nav-icon fa fa-bar-chart" aria-hidden="true"></i>
-                                        {% elif nav_key in ['user', 'users'] %}
-                                            <i class="nav-icon fa fa-users" aria-hidden="true"></i>
-                                        {% elif nav_key in ['about'] %}
-                                            <i class="nav-icon fa fa-info-circle" aria-hidden="true"></i>
-                                        {% elif nav_key in ['status', 'judge'] %}
-                                            <i class="nav-icon fa fa-server" aria-hidden="true"></i>
-                                        {% else %}
-                                            <i class="nav-icon fa fa-circle-o" aria-hidden="true"></i>
-                                        {% endif %}
-                                        <span class="nav-label">{{ user_trans(node.label) }}</span>
-                                        {% if not node.is_leaf_node() %}
-                                            <span class="nav-expand"><i class="fa fa-chevron-right" aria-hidden="true"></i></span>
-                                        {% endif %}
-                                    </a>
-                                    {% with children=node.get_children() %}
-                                        {% if children %}
-                                            <ul class="sidebar-subnav-list">{{ loop(children) }}</ul>
-                                        {% endif %}
-                                    {% endwith %}
-                                </li>
-                            {% endfor %}
-                        {% else %}
-                            <!-- Fallback Default Links (matching mockups if fixtures unseeded) -->
-                            <li class="sidebar-nav-item">
-                                <a href="{{ url('problem_list') }}" class="sidebar-nav-link nav-problems{% if request.path.startswith('/problem') %} active{% endif %}">
+        <!-- 2. Responsive Mobile Drawer Navigation (< 1024px) -->
+        <aside id="navigation" class="mobile-drawer app-sidebar" role="navigation" aria-label="{{ _('Mobile Navigation') }}">
+            <div class="drawer-header sidebar-brand">
+                <a href="{{ url('home') }}" class="drawer-brand-link sidebar-brand-link" title="{{ SITE_LONG_NAME }}">
+                    {% if request.in_contest and request.participation.contest.logo_override_image %}
+                        <img src="{{ request.participation.contest.logo_override_image|camo }}" alt="{{ SITE_NAME }}" class="sidebar-brand-img">
+                    {% elif logo_override_image is defined and logo_override_image %}
+                        <img src="{{ logo_override_image|camo }}" alt="{{ SITE_NAME }}" class="sidebar-brand-img">
+                    {% else %}
+                        <span class="drawer-brand-text sidebar-brand-text">VCoder<span class="brand-accent-o">Log</span></span>
+                    {% endif %}
+                </a>
+                <button type="button" class="drawer-close-btn" id="sidebar-close-btn" aria-label="{{ _('Close navigation') }}">
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <ul id="nav-list" class="sidebar-nav-list drawer-nav-list">
+                <li class="sidebar-nav-item home-menu-item">
+                    <a href="{{ url('home') }}" class="sidebar-nav-link nav-home{% if not nav_tab and (request.path == '/' or request.path == url('home')) %} active{% endif %}">
+                        <i class="nav-icon fa fa-th-large" aria-hidden="true"></i>
+                        <span class="nav-label">{{ _('Dashboard') }}</span>
+                    </a>
+                </li>
+                {% if nav_bar %}
+                    {% for node in mptt_tree(nav_bar) recursive %}
+                        {% set nav_key = node.key|lower %}
+                        <li class="sidebar-nav-item">
+                            <a href="{{ node.path }}" class="sidebar-nav-link nav-{{ node.key }}{% if node.key in nav_tab %} active{% endif %}">
+                                {% if nav_key in ['problems', 'problem'] %}
                                     <i class="nav-icon fa fa-file-text-o" aria-hidden="true"></i>
-                                    <span class="nav-label">{{ _('Problems') }}</span>
-                                </a>
-                            </li>
-                            <li class="sidebar-nav-item">
-                                <a href="{{ url('all_submissions') }}" class="sidebar-nav-link nav-submissions{% if request.path.startswith('/submission') or request.path.startswith('/src/') %} active{% endif %}">
+                                {% elif nav_key in ['submit', 'submissions', 'submission'] %}
                                     <i class="nav-icon fa fa-play-circle-o" aria-hidden="true"></i>
-                                    <span class="nav-label">{{ _('Submissions') }}</span>
-                                </a>
-                            </li>
-                            <li class="sidebar-nav-item">
-                                <a href="{{ url('contest_list') }}" class="sidebar-nav-link nav-contests{% if request.path.startswith('/contest') %} active{% endif %}">
+                                {% elif nav_key in ['contest', 'contests'] %}
                                     <i class="nav-icon fa fa-trophy" aria-hidden="true"></i>
-                                    <span class="nav-label">{{ _('Contests') }}</span>
-                                </a>
-                            </li>
-                            <li class="sidebar-nav-item">
-                                <a href="{{ url('user_list') }}" class="sidebar-nav-link nav-rankings{% if request.path.startswith('/user') %} active{% endif %}">
+                                {% elif nav_key in ['rankings', 'ranking'] %}
                                     <i class="nav-icon fa fa-bar-chart" aria-hidden="true"></i>
-                                    <span class="nav-label">{{ _('Rankings') }}</span>
-                                </a>
-                            </li>
-                        {% endif %}
-
-                        <!-- Settings Navigation Item -->
-                        <li class="sidebar-nav-item settings-menu-item">
-                            <a href="{% if request.user.is_authenticated %}{{ url('user_edit_profile') }}{% else %}{{ url('auth_login') }}{% endif %}"
-                               class="sidebar-nav-link nav-settings{% if request.path == url('user_edit_profile') %} active{% endif %}">
-                                <i class="nav-icon fa fa-cog" aria-hidden="true"></i>
-                                <span class="nav-label">{{ _('Settings') }}</span>
-                            </a>
-                        </li>
-                    </ul>
-                </aside>
-
-                <!-- Sidebar Backdrop Overlay (Mobile/Tablet Drawer Mode) -->
-                <div class="sidebar-backdrop" id="sidebar-backdrop" aria-hidden="true"></div>
-
-                <!-- Main Content Viewport -->
-                <div class="app-main-viewport" id="app-main-viewport">
-                    
-                    <!-- Floating Draggable Contest Info Timer Pill (When inside a contest) -->
-                    {% if request.in_contest %}
-                        <div id="contest-info" class="contest-info-pill">
-                            <a href="{{ url('contest_view', request.participation.contest.key) }}" class="contest-info-link">
-                                <i class="fa fa-trophy contest-icon"></i>
-                                <span class="contest-name">{{ request.participation.contest.name }}</span> -
-                                {% if request.participation.spectate %}
-                                    <span class="contest-mode-badge">{{ _('spectating') }}</span>
-                                {% elif request.participation.end_time %}
-                                    <div id="contest-time-remaining" data-secs="{{ request.participation.time_remaining|seconds }}">
-                                        {{ request.participation.time_remaining|timedelta("localized") }}
-                                    </div>
+                                {% elif nav_key in ['user', 'users'] %}
+                                    <i class="nav-icon fa fa-users" aria-hidden="true"></i>
+                                {% elif nav_key in ['about'] %}
+                                    <i class="nav-icon fa fa-info-circle" aria-hidden="true"></i>
+                                {% elif nav_key in ['status', 'judge'] %}
+                                    <i class="nav-icon fa fa-server" aria-hidden="true"></i>
                                 {% else %}
-                                    <span class="contest-mode-badge">{{ _('virtual') }}</span>
+                                    <i class="nav-icon fa fa-circle-o" aria-hidden="true"></i>
+                                {% endif %}
+                                <span class="nav-label">{{ user_trans(node.label) }}</span>
+                                {% if not node.is_leaf_node() %}
+                                    <span class="nav-expand"><i class="fa fa-chevron-right" aria-hidden="true"></i></span>
                                 {% endif %}
                             </a>
+                            {% with children=node.get_children() %}
+                                {% if children %}
+                                    <ul class="sidebar-subnav-list">{{ loop(children) }}</ul>
+                                {% endif %}
+                            {% endwith %}
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <!-- Fallback Default Links -->
+                    <li class="sidebar-nav-item">
+                        <a href="{{ url('problem_list') }}" class="sidebar-nav-link nav-problems{% if request.path.startswith('/problem') %} active{% endif %}">
+                            <i class="nav-icon fa fa-file-text-o" aria-hidden="true"></i>
+                            <span class="nav-label">{{ _('Problems') }}</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="{{ url('contest_list') }}" class="sidebar-nav-link nav-contests{% if request.path.startswith('/contest') %} active{% endif %}">
+                            <i class="nav-icon fa fa-trophy" aria-hidden="true"></i>
+                            <span class="nav-label">{{ _('Contests') }}</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="{{ url('all_submissions') }}" class="sidebar-nav-link nav-submissions{% if request.path.startswith('/submission') or request.path.startswith('/src/') %} active{% endif %}">
+                            <i class="nav-icon fa fa-play-circle-o" aria-hidden="true"></i>
+                            <span class="nav-label">{{ _('Submissions') }}</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="{{ url('user_list') }}" class="sidebar-nav-link nav-rankings{% if request.path.startswith('/user') %} active{% endif %}">
+                            <i class="nav-icon fa fa-bar-chart" aria-hidden="true"></i>
+                            <span class="nav-label">{{ _('Rankings') }}</span>
+                        </a>
+                    </li>
+                {% endif %}
+                <li class="sidebar-nav-item settings-menu-item">
+                    <a href="{% if request.user.is_authenticated %}{{ url('user_edit_profile') }}{% else %}{{ url('auth_login') }}{% endif %}" class="sidebar-nav-link nav-settings{% if request.path == url('user_edit_profile') %} active{% endif %}">
+                        <i class="nav-icon fa fa-cog" aria-hidden="true"></i>
+                        <span class="nav-label">{{ _('Settings') }}</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item lang-menu-item">
+                    <form action="{{ url('set_language') }}" method="post" class="sidebar-lang-form" style="padding: 10px 16px;">
+                        {% csrf_token %}
+                        <input name="next" type="hidden" value="{{ request.get_full_path() }}">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span style="font-size: 13px; font-weight: 500; color: var(--color-text-secondary);"><i class="fa fa-globe fa-fw"></i> {{ _('Language') }}</span>
+                            <select name="language" onchange="this.form.submit()" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 12px; font-weight: 600; background: var(--color-bg-card); color: var(--color-text-main);">
+                                <option value="vi" {% if LANGUAGE_CODE == 'vi' %}selected{% endif %}>Tiếng Việt (VI)</option>
+                                <option value="en" {% if LANGUAGE_CODE != 'vi' %}selected{% endif %}>English (EN)</option>
+                            </select>
                         </div>
+                    </form>
+                </li>
+            </ul>
+        </aside>
+        <div class="sidebar-backdrop drawer-backdrop" id="sidebar-backdrop" aria-hidden="true"></div>
+
+        <!-- 3. Full-Bleed Main Viewport Canvas -->
+        <main id="app-main" class="app-main">
+            <div class="app-main-viewport" id="app-main-viewport">
+                <div id="page-container" class="page-container">
+                    <noscript>
+                        <div id="noscript">{{ _('This site works best with JavaScript enabled.') }}</div>
+                    </noscript>
+
+                    <div id="content" class="app-content-area">
+                        {% block title_row %}
+                            <h2 style="display:inline">
+                                {% block content_title %}
+                                    {% if content_title %}{{ content_title }}{% else %}{{ title }}{% endif %}
+                                {% endblock %}
+                            </h2>
+                        {% endblock %}
+
+                        {% block header %}{% endblock %}
+
+                        {% block title_ruler %}
+                            <hr class="content-title-ruler">
+                        {% endblock %}
+
+                        <div id="content-body" class="content-body-wrapper">
+                            {% block body %}{% endblock %}
+                        </div>
+                    </div>
+
+                    {% if misc_config.announcement %}
+                        <div id="announcement" class="announcement-banner">{{ misc_config.announcement|safe }}</div>
                     {% endif %}
 
-                    <!-- Page Container -->
-                    <div id="page-container" class="page-container">
-                        <noscript>
-                            <div id="noscript">{{ _('This site works best with JavaScript enabled.') }}</div>
-                        </noscript>
+                    {% block bodyend %}{% endblock %}
 
-                        <!-- Content Core Area -->
-                        <main id="content" class="app-content-area">
-                            {% block title_row %}
-                                <h2 style="display:inline">
-                                    {% block content_title %}
-                                        {% if content_title %}{{ content_title }}{% else %}{{ title }}{% endif %}
-                                    {% endblock %}
-                                </h2>
-                            {% endblock %}
-
-                            {% block header %}{% endblock %}
-
-                            {% block title_ruler %}
-                                <hr class="content-title-ruler">
-                            {% endblock %}
-
-                            <div id="content-body" class="content-body-wrapper">
-                                {% block body %}{% endblock %}
-                            </div>
-                        </main>
-
-                        <!-- Site Announcement Banner -->
-                        {% if misc_config.announcement %}
-                            <div id="announcement" class="announcement-banner">{{ misc_config.announcement|safe }}</div>
-                        {% endif %}
-
-                        {% block bodyend %}{% endblock %}
-
-                        <!-- Modern Shell Footer -->
-                        <footer class="app-footer">
-                            <span id="footer-content" class="footer-content">
-                                <a href="https://dmoj.ca" class="footer-powered-link">{{ _('proudly powered by **DMOJ**')|markdown('default', strip_paragraphs=True) }}</a>
-                                {% if misc_config.footer %}
-                                    <span class="footer-separator">|</span> {{ misc_config.footer|safe }}
-                                {% endif %}
-                                <span class="footer-separator">|</span>
-                                <form action="{{ url('set_language') }}" method="post" class="language-select-form">
-                                    {% csrf_token %}
-                                    <input name="next" type="hidden" value="{{ request.get_full_path() }}">
-                                    <select name="language" onchange="this.form.submit()" class="footer-language-select">
-                                        {% for language in language_info_list(LANGUAGES) %}
-                                            <option value="{{ language.code }}" {% if language.code == LANGUAGE_CODE %}selected{% endif %}>
-                                                {{ language.name_local }} ({{ language.code }})
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                </form>
-                            </span>
-                        </footer>
-                    </div>
+                    {% block footer %}
+                    <footer class="app-footer">
+                        <span id="footer-content" class="footer-content">
+                            <a href="https://dmoj.ca" class="footer-powered-link">{{ _('proudly powered by **DMOJ**')|markdown('default', strip_paragraphs=True) }}</a>
+                            {% if misc_config.footer %}
+                                <span class="footer-separator">|</span> {{ misc_config.footer|safe }}
+                            {% endif %}
+                            <span class="footer-separator">|</span>
+                            <form action="{{ url('set_language') }}" method="post" class="language-select-form">
+                                {% csrf_token %}
+                                <input name="next" type="hidden" value="{{ request.get_full_path() }}">
+                                <select name="language" onchange="this.form.submit()" class="footer-language-select">
+                                    {% for language in language_info_list(LANGUAGES) %}
+                                        <option value="{{ language.code }}" {% if language.code == LANGUAGE_CODE %}selected{% endif %}>
+                                            {{ language.name_local }} ({{ language.code }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        </span>
+                    </footer>
+                    {% endblock %}
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
-    <!-- Global ⌘K Quick Search Modal Dialog Overlay -->
-    <div id="global-search-modal" class="mac-modal-backdrop" style="display: none;" aria-hidden="true" role="dialog" aria-modal="true">
-        <div class="mac-modal-dialog search-modal-dialog">
+    <!-- 4. Global ⌘K Quick Search Modal Dialog Overlay -->
+    <div id="global-search-modal" class="modal-backdrop search-modal-root" style="display: none;" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="search-modal-dialog">
             <div class="search-modal-header">
                 <i class="fa fa-search modal-search-icon" aria-hidden="true"></i>
                 <input type="text"

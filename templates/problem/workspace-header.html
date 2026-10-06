@@ -37,12 +37,12 @@
     </div>
 
     <div class="header-right">
-        <!-- 5 Metric Cards Grid matching Mockup 2 -->
+        <!-- 5 Compact Metric Badge Pills matching Mockup 2 -->
         <div class="problem-metrics-grid">
-            <!-- 1. Points Card -->
-            <div class="metric-card metric-points">
+            <!-- 1. Points Badge -->
+            <div class="metric-card metric-points" title="{{ _('Points') }}">
                 <div class="metric-header">
-                    <i class="fa fa-code-fork" aria-hidden="true"></i>
+                    <i class="fa fa-star-o text-amber" aria-hidden="true"></i>
                     <span>{{ _('Points') }}</span>
                 </div>
                 <div class="metric-value">
@@ -54,20 +54,38 @@
                 </div>
             </div>
 
-            <!-- 2. AC Rate Card with Progress Bar -->
-            <div class="metric-card metric-ac-rate">
+            <!-- 2. AC Rate Badge -->
+            <div class="metric-card metric-ac-rate" title="{{ _('Acceptance Rate') }}">
                 <div class="metric-header">
-                    <i class="fa fa-pie-chart" aria-hidden="true"></i>
+                    <i class="fa fa-pie-chart text-emerald" aria-hidden="true"></i>
                     <span>{{ _('AC Rate') }}</span>
                 </div>
                 <div class="metric-value">{{ problem.ac_rate|default(0)|floatformat(1) }}%</div>
-                <div class="metric-progress metric-progress-bar" aria-hidden="true">
+                <div class="metric-progress metric-progress-bar" aria-hidden="true" style="display:none;">
                     <div class="progress-bar-fill ac-rate-fill" style="width: {{ [problem.ac_rate|default(0)|floatformat(0)|int, 100]|min }}%;"></div>
                 </div>
             </div>
 
-            <!-- 3. Group Card -->
-            <div class="metric-card metric-group">
+            <!-- 3. Time Limit Badge -->
+            <div class="metric-card metric-time-limit" title="{{ _('time limit')|capitalize }}">
+                <div class="metric-header">
+                    <i class="fa fa-clock-o text-blue" aria-hidden="true"></i>
+                    <span>{{ _('time limit')|capitalize }}</span>
+                </div>
+                <div class="metric-value">{{ problem.time_limit }} s</div>
+            </div>
+
+            <!-- 4. Memory Limit Badge -->
+            <div class="metric-card metric-memory-limit" title="{{ _('memory limit')|capitalize }}">
+                <div class="metric-header">
+                    <i class="fa fa-microchip text-purple" aria-hidden="true"></i>
+                    <span>{{ _('memory limit')|capitalize }}</span>
+                </div>
+                <div class="metric-value">{{ problem.memory_limit|kbsimpleformat }}</div>
+            </div>
+
+            <!-- 5. Group Badge -->
+            <div class="metric-card metric-group" title="{{ problem.group.full_name if problem.group else '' }}">
                 <div class="metric-header">
                     <i class="fa fa-folder-o" aria-hidden="true"></i>
                     <span>{{ _('Group') }}</span>
@@ -75,24 +93,6 @@
                 <div class="metric-value" title="{{ problem.group.full_name if problem.group else '' }}">
                     {{ problem.group.name if problem.group else 'DMOJ' }}
                 </div>
-            </div>
-
-            <!-- 4. Time Limit Card -->
-            <div class="metric-card metric-time-limit">
-                <div class="metric-header">
-                    <i class="fa fa-clock-o" aria-hidden="true"></i>
-                    <span>{{ _('Time Limit') }}</span>
-                </div>
-                <div class="metric-value">{{ problem.time_limit }} s</div>
-            </div>
-
-            <!-- 5. Memory Limit Card -->
-            <div class="metric-card metric-memory-limit">
-                <div class="metric-header">
-                    <i class="fa fa-server" aria-hidden="true"></i>
-                    <span>{{ _('Memory Limit') }}</span>
-                </div>
-                <div class="metric-value">{{ problem.memory_limit|kbsimpleformat }}</div>
             </div>
         </div>
     </div>

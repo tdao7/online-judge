@@ -156,38 +156,58 @@
 {% block title_ruler %}{% endblock %}
 
 {% block title_row %}
-    <!-- macOS Catalog Header (Screen 3: 3.png) -->
-    <div class="submissions-header">
+    <!-- Submissions Header (Global & Problem-Scoped) -->
+    <div class="submissions-header{% if problem %} problem-scoped-header{% endif %}">
         <div class="submissions-header-main">
-            <h1 class="submissions-heading">{{ _('Submissions') }}</h1>
-            <p class="submissions-subheading">{{ _('View and analyze your submission history on DMOJ.') }}</p>
+            {% if problem %}
+                <nav class="problem-breadcrumb" aria-label="{{ _('Breadcrumb') }}">
+                    <a href="{{ url('problem_list') }}" class="breadcrumb-link">{{ _('Problems') }}</a>
+                    <span class="breadcrumb-sep"><i class="fa fa-angle-right" aria-hidden="true"></i></span>
+                    <a href="{{ url('problem_detail', problem.code) }}" class="breadcrumb-link">{{ problem_name or problem.name }}</a>
+                    <span class="breadcrumb-sep"><i class="fa fa-angle-right" aria-hidden="true"></i></span>
+                    <span class="breadcrumb-current">{{ _('Submissions') }}</span>
+                </nav>
+                <h1 class="submissions-heading">{{ problem_name or problem.name }} <span class="heading-sub-scope">{{ _('Submissions') }}</span></h1>
+                <p class="submissions-subheading">{{ _('Submission history and grading verdicts for this problem.') }}</p>
+            {% else %}
+                <h1 class="submissions-heading">{{ _('Submissions') }}</h1>
+                <p class="submissions-subheading">{{ _('View and analyze your submission history on DMOJ.') }}</p>
+            {% endif %}
         </div>
 
-        <!-- Navigation Tabs / Quick Filter Pills -->
-        <div class="submissions-nav-pills">
-            <a href="{{ all_submissions_link }}"
-               class="nav-pill-item{% if tab == 'all_submissions_list' %} active{% endif %}">
-                <i class="fa fa-list"></i> {{ _('All') }}
-            </a>
-            {% if my_submissions_link %}
-                <a href="{{ my_submissions_link }}"
-                   class="nav-pill-item{% if tab == 'my_submissions_tab' %} active{% endif %}">
-                    <i class="fa fa-user"></i> {{ _('Mine') }}
+        <div class="submissions-header-actions">
+            {% if problem %}
+                <a href="{{ url('problem_detail', problem.code) }}" class="btn-back-problem">
+                    <i class="fa fa-code"></i> {{ _('Solve Problem') }}
                 </a>
             {% endif %}
-            {% if best_submissions_link %}
-                <a href="{{ best_submissions_link }}"
-                   class="nav-pill-item{% if tab == 'best_submissions_list' %} active{% endif %}">
-                    <i class="fa fa-bar-chart"></i> {{ _('Best') }}
+
+            <!-- Navigation Tabs / Quick Filter Pills -->
+            <div class="submissions-nav-pills">
+                <a href="{{ all_submissions_link }}"
+                   class="nav-pill-item{% if tab == 'all_submissions_list' %} active{% endif %}">
+                    <i class="fa fa-list"></i> {{ _('All') }}
                 </a>
-            {% endif %}
-            {% if perms.judge.change_submission %}
-                <a href="{{ url('admin:judge_submission_changelist') }}"
-                   class="nav-pill-item btn-admin"
-                   title="{{ _('Admin Submission List') }}">
-                    <i class="fa fa-sliders"></i> {{ _('Admin') }}
-                </a>
-            {% endif %}
+                {% if my_submissions_link %}
+                    <a href="{{ my_submissions_link }}"
+                       class="nav-pill-item{% if tab == 'my_submissions_tab' %} active{% endif %}">
+                        <i class="fa fa-user"></i> {{ _('Mine') }}
+                    </a>
+                {% endif %}
+                {% if best_submissions_link %}
+                    <a href="{{ best_submissions_link }}"
+                       class="nav-pill-item{% if tab == 'best_submissions_list' %} active{% endif %}">
+                        <i class="fa fa-bar-chart"></i> {{ _('Best') }}
+                    </a>
+                {% endif %}
+                {% if perms.judge.change_submission %}
+                    <a href="{{ url('admin:judge_submission_changelist') }}"
+                       class="nav-pill-item btn-admin"
+                       title="{{ _('Admin Submission List') }}">
+                        <i class="fa fa-sliders"></i> {{ _('Admin') }}
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </div>
 {% endblock %}
@@ -367,12 +387,13 @@
                             {% if selected_date == 'today' %}{{ _('Today') }}
                             {% elif selected_date == '7d' %}{{ _('Last 7 Days') }}
                             {% elif selected_date == '30d' %}{{ _('Last 30 Days') }}
-                            {% else %}{{ _('Last 30 Days') }}{% endif %}
+                            {% elif selected_date == 'all' %}{{ _('All Time') }}
+                            {% else %}{{ _('All Time') }}{% endif %}
                         </span>
                         <i class="fa fa-chevron-down chevron-icon"></i>
                     </button>
                     <div class="filter-dropdown-menu">
-                        <div class="dropdown-item{% if selected_date == 'all' %} active{% endif %}"
+                        <div class="dropdown-item{% if not selected_date or selected_date == 'all' %} active{% endif %}"
                              data-filter="date" data-value="all">
                             {{ _('All Time') }}
                         </div>
@@ -384,7 +405,7 @@
                              data-filter="date" data-value="7d">
                             {{ _('Last 7 Days') }}
                         </div>
-                        <div class="dropdown-item{% if not selected_date or selected_date == '30d' %} active{% endif %}"
+                        <div class="dropdown-item{% if selected_date == '30d' %} active{% endif %}"
                              data-filter="date" data-value="30d">
                             {{ _('Last 30 Days') }}
                         </div>
@@ -392,6 +413,7 @@
                 </div>
             </div>
 
+            {% if show_problem %}
             <!-- 5. Problem Multi-Filter Dropdown -->
             <div class="filter-group-item" id="filter-item-problem">
                 <span class="filter-group-label">{{ _('Problem') }}</span>
@@ -434,8 +456,9 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
 
-            {% if selected_statuses or selected_languages or selected_contest or (selected_date and selected_date != '30d') or selected_problem %}
+            {% if selected_statuses or selected_languages or selected_contest or (selected_date and selected_date != 'all') or (show_problem and selected_problem) %}
                 <!-- Quick Reset Filters Action -->
                 <a href="{{ first_page_base or '.' }}" class="btn-clear-filters" title="{{ _('Reset all filters') }}">
                     <i class="fa fa-times-circle"></i> {{ _('Clear Filters') }}
@@ -451,10 +474,10 @@
             <div class="submissions-table-card">
                 <div class="table-responsive">
                     <table id="submissions-table" class="submissions-table">
-                        <thead>
+                        <thead{% if not submissions %} class="thead-empty-hidden"{% endif %}>
                             <tr>
                                 <th class="col-id">{{ _('ID') }}</th>
-                                <th class="col-problem">{{ _('Problem') }}</th>
+                                {% if show_problem %}<th class="col-problem">{{ _('Problem') }}</th>{% endif %}
                                 <th class="col-user">{{ _('User') }}</th>
                                 <th class="col-verdict">{{ _('Verdict') }}</th>
                                 <th class="col-language">{{ _('Language') }}</th>
@@ -478,11 +501,30 @@
                                 </tr>
                             {% else %}
                                 <tr class="empty-table-row">
-                                    <td colspan="9" class="empty-table-cell">
+                                    <td colspan="{% if show_problem %}9{% else %}8{% endif %}" class="empty-table-cell">
                                         <div class="empty-state-wrap">
                                             <i class="fa fa-inbox empty-state-icon"></i>
-                                            <p class="empty-state-title">{{ _('No submissions found') }}</p>
-                                            <p class="empty-state-subtitle">{{ _('Try adjusting your filters or date range.') }}</p>
+                                            <p class="empty-state-title">
+                                                {% if problem %}
+                                                    {{ _('No submissions yet for %(problem)s', problem=(problem_name or problem.name)) }}
+                                                {% else %}
+                                                    {{ _('No submissions found') }}
+                                                {% endif %}
+                                            </p>
+                                            <p class="empty-state-subtitle">
+                                                {% if problem %}
+                                                    {{ _('Be the first to solve this problem and claim the top ranking!') }}
+                                                {% else %}
+                                                    {{ _('Try adjusting your filters or date range.') }}
+                                                {% endif %}
+                                            </p>
+                                            {% if problem %}
+                                                <div class="empty-state-cta">
+                                                    <a href="{{ url('problem_detail', problem.code) }}" class="btn-empty-cta">
+                                                        <i class="fa fa-code"></i> {{ _('Solve Problem Now') }}
+                                                    </a>
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>

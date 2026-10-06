@@ -46,17 +46,31 @@
                 <span>{{ _('Reset') }}</span>
             </button>
 
-            <!-- Run Code Button -->
-            <button type="button" class="btn btn-outline btn-run" id="btn-run-code" title="{{ _('Run code on testcases') }}">
-                <i class="fa fa-play" aria-hidden="true"></i>
-                <span>{{ _('Run') }}</span>
-            </button>
+            {% if request.user.is_authenticated %}
+                <!-- Run Code Button -->
+                <button type="button" class="btn btn-outline btn-run" id="btn-run-code" title="{{ _('Run code on testcases') }}">
+                    <i class="fa fa-play" aria-hidden="true"></i>
+                    <span>{{ _('Run') }}</span>
+                </button>
 
-            <!-- Submit Solution Button (Warm Orange #F97316) -->
-            <button type="button" class="btn btn-primary btn-submit" id="btn-submit-code" title="{{ _('Submit solution for grading') }}">
-                <i class="fa fa-upload" aria-hidden="true"></i>
-                <span>{{ _('Submit') }}</span>
-            </button>
+                <!-- Submit Solution Button (Warm Orange #F97316) -->
+                <button type="button" class="btn btn-primary btn-submit" id="btn-submit-code" title="{{ _('Submit solution for grading') }}">
+                    <i class="fa fa-upload" aria-hidden="true"></i>
+                    <span>{{ _('Submit') }}</span>
+                </button>
+            {% else %}
+                <!-- Hidden Run Button for headless test script compatibility -->
+                <button type="button" class="btn btn-outline btn-run" id="btn-run-code" style="display: none;"></button>
+
+                <!-- Anonymous CTA: Sign in to Submit -->
+                <a href="{{ url('auth_login') }}?next={{ request.get_full_path()|urlencode }}"
+                   class="btn btn-primary btn-submit btn-login-submit"
+                   id="btn-submit-code"
+                   title="{{ _('Log in to submit solution') }}">
+                    <i class="fa fa-sign-in" aria-hidden="true"></i>
+                    <span>{{ _('Log in to Submit') }}</span>
+                </a>
+            {% endif %}
         </div>
     </div>
 
@@ -108,145 +122,133 @@
         </form>
     </div>
 
-    <!-- Bottom Testcases & Console Area -->
-    <div class="testcase-console workspace-console" id="testcase-console">
+    <!-- Bottom Testcases & Console Area (Collapsible Drawer) -->
+    <div class="testcase-console workspace-console is-collapsed" id="testcase-console">
         <!-- Console Tabs Navigation -->
         <div class="console-nav-bar">
-            <div class="console-tabs" role="tablist">
-                <button type="button" class="console-tab-btn tab-console-testcases active" id="tab-btn-testcases" role="tab" aria-selected="true" data-tab="testcases">
-                    <i class="fa fa-check-square-o"></i> {{ _('Testcases') }}
+            <div class="console-nav-left">
+                <button type="button" class="console-collapse-toggle" id="console-collapse-toggle" aria-expanded="false" title="{{ _('Toggle Console') }}">
+                    <i class="fa fa-terminal"></i>
+                    <span class="console-btn-text">{{ _('Console') }}</span>
+                    <i class="fa fa-chevron-up toggle-chevron" id="console-toggle-icon"></i>
                 </button>
-                <button type="button" class="console-tab-btn tab-console-submissions" id="tab-btn-submissions" role="tab" aria-selected="false" data-tab="submissions">
-                    <i class="fa fa-history"></i> {{ _('Submissions') }}
-                </button>
+
+                <div class="console-tabs" role="tablist">
+                    <button type="button" class="console-tab-btn tab-console-testcases active" id="tab-btn-testcases" role="tab" aria-selected="true" data-tab="testcases">
+                        <i class="fa fa-check-square-o"></i> <span>{{ _('Testcases') }}</span>
+                    </button>
+                    <button type="button" class="console-tab-btn tab-console-submissions" id="tab-btn-submissions" role="tab" aria-selected="false" data-tab="submissions">
+                        <i class="fa fa-history"></i> <span>{{ _('Submissions') }}</span>
+                    </button>
+                </div>
             </div>
 
             <div class="console-actions">
-                <button type="button" class="btn-add-testcase btn-add-custom-test" id="btn-add-testcase">
-                    <i class="fa fa-plus"></i> <span>{{ _('Add custom test') }}</span>
+                <button type="button" class="btn-add-testcase btn-add-custom-test" id="btn-add-testcase" title="{{ _('Add custom test') }}">
+                    <i class="fa fa-plus"></i> <span>{{ _('Add test') }}</span>
                 </button>
             </div>
         </div>
 
-        <!-- Console Content Pane: Testcases -->
-        <div class="console-tab-pane active" id="console-pane-testcases" role="tabpanel">
+        <div class="console-drawer-body" id="console-drawer-body">
+            {% if not request.user.is_authenticated %}
+                <div class="guest-console-banner">
+                    <i class="fa fa-lock guest-lock-icon"></i>
+                    <span>{{ _('Guest mode: Log in to run testcases, save drafts, and submit solutions.') }}</span>
+                    <a href="{{ url('auth_login') }}?next={{ request.get_full_path()|urlencode }}" class="guest-login-link">{{ _('Log in') }}</a>
+                </div>
+            {% endif %}
+
+            <!-- Console Content Pane: Testcases -->
+            <div class="console-tab-pane active" id="console-pane-testcases" role="tabpanel">
             <div class="testcases-list" id="testcases-list">
-                <!-- Testcase 1 (Sample) -->
-                <div class="testcase-row" data-testcase-id="1">
-                    <div class="testcase-main-bar">
-                        <button type="button" class="testcase-toggle-btn" aria-label="Toggle details">
-                            <i class="fa fa-chevron-right toggle-icon"></i>
-                        </button>
-                        <span class="testcase-number">#1</span>
+                {% if sample_testcases %}
+                    {% for tc in sample_testcases %}
+                        <div class="testcase-row" data-testcase-id="{{ loop.index }}">
+                            <div class="testcase-main-bar">
+                                <button type="button" class="testcase-toggle-btn" aria-label="Toggle details">
+                                    <i class="fa fa-chevron-right toggle-icon"></i>
+                                </button>
+                                <span class="testcase-number">#{{ loop.index }}</span>
 
-                        <div class="testcase-field-box">
-                            <span class="testcase-field-label">{{ _('Sample Input 1') }}</span>
-                            <input type="text" class="testcase-field-input input-sample-data" value="1 2" spellcheck="false">
+                                <div class="testcase-field-box">
+                                    <span class="testcase-field-label">{{ _('Sample Input') }} {{ loop.index }}</span>
+                                    <input type="text" class="testcase-field-input input-sample-data" value="{{ tc.input|replace('\r', '')|replace('\n', ' ↵ ') }}" data-raw-input="{{ tc.input }}" spellcheck="false">
+                                </div>
+
+                                <div class="testcase-field-box">
+                                    <span class="testcase-field-label">{{ _('Expected Output') }}</span>
+                                    <input type="text" class="testcase-field-input expected-sample-data" value="{{ tc.output|replace('\r', '')|replace('\n', ' ↵ ') }}" data-raw-output="{{ tc.output }}" spellcheck="false">
+                                </div>
+
+                                <div class="testcase-verdict-slot">
+                                    <span class="verdict-pill verdict-idle" id="verdict-pill-{{ loop.index }}">
+                                        <i class="fa fa-circle-o"></i> <span>{{ _('Ready') }}</span>
+                                    </span>
+                                </div>
+
+                                <div class="testcase-menu-slot">
+                                    <button type="button" class="testcase-dot-menu-btn" title="Options">
+                                        <i class="fa fa-ellipsis-v"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="testcase-expanded-details" style="display: none;">
+                                <div class="detail-row">
+                                    <span class="detail-tag">{{ _('Input:') }}</span>
+                                    <pre class="full-input-val">{{ tc.input }}</pre>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-tag">{{ _('Expected:') }}</span>
+                                    <pre class="expected-output-val">{{ tc.output }}</pre>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-tag">{{ _('Actual Output:') }}</span>
+                                    <code class="actual-output-val">—</code>
+                                </div>
+                            </div>
                         </div>
-
-                        <div class="testcase-field-box">
-                            <span class="testcase-field-label">{{ _('Expected Output') }}</span>
-                            <input type="text" class="testcase-field-input expected-sample-data" value="3" spellcheck="false">
-                        </div>
-
-                        <div class="testcase-verdict-slot">
-                            <span class="verdict-pill verdict-ac" id="verdict-pill-1">
-                                <i class="fa fa-check-circle"></i> <span>AC</span>
-                            </span>
-                        </div>
-
-                        <div class="testcase-menu-slot">
-                            <button type="button" class="testcase-dot-menu-btn" title="Options">
-                                <i class="fa fa-ellipsis-v"></i>
+                    {% endfor %}
+                {% else %}
+                    <div class="testcase-row" data-testcase-id="1">
+                        <div class="testcase-main-bar">
+                            <button type="button" class="testcase-toggle-btn" aria-label="Toggle details">
+                                <i class="fa fa-chevron-right toggle-icon"></i>
                             </button>
+                            <span class="testcase-number">#1</span>
+
+                            <div class="testcase-field-box">
+                                <span class="testcase-field-label">{{ _('Custom Test') }} 1</span>
+                                <input type="text" class="testcase-field-input input-sample-data" placeholder="{{ _('Input data') }}" spellcheck="false">
+                            </div>
+
+                            <div class="testcase-field-box">
+                                <span class="testcase-field-label">{{ _('Expected Output') }}</span>
+                                <input type="text" class="testcase-field-input expected-sample-data" placeholder="{{ _('Expected output') }}" spellcheck="false">
+                            </div>
+
+                            <div class="testcase-verdict-slot">
+                                <span class="verdict-pill verdict-idle" id="verdict-pill-1">
+                                    <i class="fa fa-circle-o"></i> <span>{{ _('Ready') }}</span>
+                                </span>
+                            </div>
+
+                            <div class="testcase-menu-slot">
+                                <button type="button" class="testcase-dot-menu-btn" title="Options">
+                                    <i class="fa fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="testcase-expanded-details" style="display: none;">
+                            <div class="detail-row">
+                                <span class="detail-tag">{{ _('Actual Output:') }}</span>
+                                <code class="actual-output-val">—</code>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="testcase-expanded-details" style="display: none;">
-                        <div class="detail-row">
-                            <span class="detail-tag">{{ _('Actual Output:') }}</span>
-                            <code class="actual-output-val">3</code>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Testcase 2 (Sample) -->
-                <div class="testcase-row" data-testcase-id="2">
-                    <div class="testcase-main-bar">
-                        <button type="button" class="testcase-toggle-btn" aria-label="Toggle details">
-                            <i class="fa fa-chevron-right toggle-icon"></i>
-                        </button>
-                        <span class="testcase-number">#2</span>
-
-                        <div class="testcase-field-box">
-                            <span class="testcase-field-label">{{ _('Sample Input 2') }}</span>
-                            <input type="text" class="testcase-field-input input-sample-data" value="1000000000 1000000000" spellcheck="false">
-                        </div>
-
-                        <div class="testcase-field-box">
-                            <span class="testcase-field-label">{{ _('Expected Output') }}</span>
-                            <input type="text" class="testcase-field-input expected-sample-data" value="2000000000" spellcheck="false">
-                        </div>
-
-                        <div class="testcase-verdict-slot">
-                            <span class="verdict-pill verdict-ac" id="verdict-pill-2">
-                                <i class="fa fa-check-circle"></i> <span>AC</span>
-                            </span>
-                        </div>
-
-                        <div class="testcase-menu-slot">
-                            <button type="button" class="testcase-dot-menu-btn" title="Options">
-                                <i class="fa fa-ellipsis-v"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="testcase-expanded-details" style="display: none;">
-                        <div class="detail-row">
-                            <span class="detail-tag">{{ _('Actual Output:') }}</span>
-                            <code class="actual-output-val">2000000000</code>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Testcase 3 (Custom) -->
-                <div class="testcase-row is-custom-test" data-testcase-id="3">
-                    <div class="testcase-main-bar">
-                        <button type="button" class="testcase-toggle-btn" aria-label="Toggle details">
-                            <i class="fa fa-chevron-right toggle-icon"></i>
-                        </button>
-                        <span class="testcase-number">#3</span>
-
-                        <div class="testcase-field-box">
-                            <span class="testcase-field-label">{{ _('Custom Test') }}</span>
-                            <input type="text" class="testcase-field-input input-sample-data" value="-5 7" spellcheck="false">
-                        </div>
-
-                        <div class="testcase-field-box">
-                            <span class="testcase-field-label">{{ _('Expected Output') }}</span>
-                            <input type="text" class="testcase-field-input expected-sample-data" value="2" spellcheck="false">
-                        </div>
-
-                        <div class="testcase-verdict-slot">
-                            <span class="verdict-pill verdict-ac" id="verdict-pill-3">
-                                <i class="fa fa-check-circle"></i> <span>AC</span>
-                            </span>
-                        </div>
-
-                        <div class="testcase-menu-slot">
-                            <button type="button" class="testcase-remove-btn" title="{{ _('Remove custom test') }}">
-                                <i class="fa fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="testcase-expanded-details" style="display: none;">
-                        <div class="detail-row">
-                            <span class="detail-tag">{{ _('Actual Output:') }}</span>
-                            <code class="actual-output-val">2</code>
-                        </div>
-                    </div>
-                </div>
+                {% endif %}
             </div>
         </div>
 
@@ -256,5 +258,6 @@
                 <div class="submissions-loading"><i class="fa fa-spinner fa-spin"></i> {{ _('Loading your submissions...') }}</div>
             </div>
         </div>
-    </div>
+        </div> <!-- end console-drawer-body -->
+    </div> <!-- end testcase-console -->
 </section>

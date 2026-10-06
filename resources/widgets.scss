@@ -25,7 +25,8 @@
 // Semantic primary buttons (matching VCoder Design System)
 .button,
 input[type=submit],
-button:not(.mobile-nav-toggle):not(.header-icon-btn):not(.user-pill-trigger):not(.modal-search-close):not(.dropdown-item) {
+button.button,
+button[type=submit]:not([class]) {
     color: var(--color-text-inverse, #FFFFFF);
     text-decoration: none;
     cursor: pointer;

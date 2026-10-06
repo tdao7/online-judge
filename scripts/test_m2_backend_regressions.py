@@ -149,12 +149,12 @@ def run_tests():
         try:
             resp = client.get(route)
             content = resp.content.decode('utf-8')
-            has_window = 'mac-app-window' in content
-            has_wallpaper = 'desktop-wallpaper' in content
-            has_lights = 'traffic-lights' in content
-            assert_test(resp.status_code == 200 and has_window and has_wallpaper and has_lights,
-                        f"Test 2.{core_routes.index((route, label))+1}: Route '{route}' ({label}) returns 200 inside mac-app-window",
-                        f"Status: {resp.status_code}, window: {has_window}")
+            has_navbar = 'app-navbar' in content
+            has_main = 'app-main' in content
+            no_window = 'mac-app-window' not in content
+            assert_test(resp.status_code == 200 and has_navbar and has_main and no_window,
+                        f"Test 2.{core_routes.index((route, label))+1}: Route '{route}' ({label}) returns 200 inside app-navbar shell",
+                        f"Status: {resp.status_code}, navbar: {has_navbar}")
         except Exception as e:
             assert_test(False, f"Test 2: Route '{route}' failed with exception", str(e))
 

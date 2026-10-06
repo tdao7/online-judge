@@ -1,12 +1,14 @@
 // VCoder Online Judge — Modern macOS Dashboard Styles
 // Milestone 7: Dashboard Workspace (R4)
 
-@import "vars-vcoder";
+@use "vars" as *;
 
 .dashboard-wrapper {
-    padding: 1.5rem 1.75rem 3rem 1.75rem;
-    max-width: 1440px;
+    width: 100%;
+    max-width: 100%;
     margin: 0 auto;
+    padding: 0 0 2.5rem 0;
+    box-sizing: border-box;
 }
 
 // 1. Hero / Welcome Banner Card
@@ -200,16 +202,34 @@
     grid-template-columns: 1fr 340px;
     gap: 1.75rem;
     align-items: start;
+
+    > * {
+        min-width: 0;
+        max-width: 100%;
+    }
 }
 
 // Left Main Column
 .dashboard-main-col {
+    min-width: 0;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+// Right Sidebar Column
+.dashboard-side-col {
+    min-width: 0;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     gap: 1.75rem;
 }
 
 .dashboard-card {
+    min-width: 0;
+    max-width: 100%;
     background: var(--color-bg-card, #FFFFFF);
     border: 1px solid var(--color-border-subtle, rgba(0, 0, 0, 0.06));
     border-radius: 14px;
@@ -324,10 +344,27 @@
         }
 
         .announcement-snippet {
+            min-width: 0;
+            max-width: 100%;
+            overflow-x: auto;
+            word-break: break-word;
             font-size: 0.88rem;
             line-height: 1.6;
             color: var(--color-text-muted, #475569);
             margin: 0 0 0.75rem 0;
+
+            pre, code, .codehilite {
+                max-width: 100%;
+                overflow-x: auto;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+
+            table {
+                max-width: 100%;
+                display: block;
+                overflow-x: auto;
+            }
         }
 
         .read-more-link {
@@ -341,6 +378,14 @@
             }
         }
     }
+}
+
+// Responsive Table Wrapper for Dashboard Mini Tables
+.table-responsive-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 // Live Submissions Mini Table

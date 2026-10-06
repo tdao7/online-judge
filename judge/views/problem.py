@@ -55,6 +55,58 @@ def get_contest_submission_count(problem, profile, virtual):
                   .filter(problem__problem=problem, participation__virtual=virtual).count()
 
 
+def extract_sample_testcases(description):
+    """
+    Extract sample testcases (input & expected output) from problem markdown description.
+    Supports markdown fenced blocks (```), numbered/unadorned headings, DMOJ 4-space blocks,
+    and bilingual Vietnamese/English headings.
+    """
+    samples = []
+    if not description:
+        return samples
+
+    # Pattern 1: Sample Input [N] ... ``` ... ``` and Sample Output [N] ... ``` ... ```
+    p1 = re.compile(
+        r'#{1,4}\s*(?:Sample\s+Input|Input|Ví\s+dụ\s+đầu\s+vào)[^\n\d]*(\d*)[^\n]*\n+```[^\n]*\n(.*?)\n```\s*\n+'
+        r'#{1,4}\s*(?:Sample\s+Output|Output|Ví\s+dụ\s+đầu\s+ra)[^\n\d]*(\d*)[^\n]*\n+```[^\n]*\n(.*?)\n```',
+        re.DOTALL | re.IGNORECASE
+    )
+    for m in p1.finditer(description):
+        inp = m.group(2).strip()
+        out = m.group(4).strip()
+        if inp or out:
+            samples.append({'input': inp, 'output': out})
+
+    # Pattern 2: DMOJ 4-space indented blocks
+    if not samples:
+        p2 = re.compile(
+            r'#{1,4}\s*Sample\s+Input[^\n]*\n+((?:(?: {4}|\t)[^\n]*\n*)+)\n+'
+            r'#{1,4}\s*Sample\s+Output[^\n]*\n+((?:(?: {4}|\t)[^\n]*\n*)+)',
+            re.DOTALL | re.IGNORECASE
+        )
+        for m in p2.finditer(description):
+            raw_inp = m.group(1)
+            raw_out = m.group(2)
+            inp = '\n'.join(line[4:] if line.startswith('    ') else line.lstrip('\t') for line in raw_inp.splitlines()).strip()
+            out = '\n'.join(line[4:] if line.startswith('    ') else line.lstrip('\t') for line in raw_out.splitlines()).strip()
+            if inp or out:
+                samples.append({'input': inp, 'output': out})
+
+    # Pattern 3: Example / Examples followed by two consecutive code blocks
+    if not samples:
+        p3 = re.compile(
+            r'#{1,4}\s*(?:Example|Examples|Ví\s+dụ)[^\n]*\n+```[^\n]*\n(.*?)\n```\s*\n+```[^\n]*\n(.*?)\n```',
+            re.DOTALL | re.IGNORECASE
+        )
+        for m in p3.finditer(description):
+            inp = m.group(1).strip()
+            out = m.group(2).strip()
+            if inp or out:
+                samples.append({'input': inp, 'output': out})
+
+    return samples
+
+
 class ProblemMixin(object):
     model = Problem
     slug_url_kwarg = 'problem'
@@ -217,14 +269,31 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
             self.object.usable_languages.order_by('name', 'key')
             .prefetch_related(Prefetch('runtimeversion_set', RuntimeVersion.objects.order_by('priority')))
         )
+        if not usable.exists():
+            usable = (
+                self.object.allowed_languages.order_by('name', 'key')
+                .prefetch_related(Prefetch('runtimeversion_set', RuntimeVersion.objects.order_by('priority')))
+            )
+        if not usable.exists():
+            usable = (
+                Language.objects.all().order_by('name', 'key')
+                .prefetch_related(Prefetch('runtimeversion_set', RuntimeVersion.objects.order_by('priority')))
+            )
         context['usable_languages'] = usable
-        if authed and user.profile.language:
+        if authed and user.profile.language and usable.filter(id=user.profile.language_id).exists():
             context['default_lang'] = user.profile.language
+        elif usable.filter(key__in=['PY3', 'PYTHON3', 'CPP17', 'CPP20', 'JAVA17']).exists():
+            context['default_lang'] = usable.filter(key__in=['PY3', 'PYTHON3', 'CPP17', 'CPP20', 'JAVA17']).first()
         elif usable.exists():
             context['default_lang'] = usable.first()
         else:
             context['default_lang'] = None
         context['ACE_URL'] = settings.ACE_URL
+
+        sample_testcases = extract_sample_testcases(context.get('description', ''))
+        context['sample_testcases'] = sample_testcases
+        import json
+        context['sample_testcases_json'] = json.dumps(sample_testcases)
 
         return context
 

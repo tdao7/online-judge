@@ -257,6 +257,11 @@
         gap: 1.75rem;
         align-items: start;
 
+        > * {
+            min-width: 0;
+            max-width: 100%;
+        }
+
         @media (max-width: 1024px) {
             grid-template-columns: 1fr;
         }
@@ -264,7 +269,12 @@
 
     /* Left: Leaderboard Card Table */
     .rankings-main-col {
+        min-width: 0;
+        max-width: 100%;
+
         .rankings-table-card {
+            min-width: 0;
+            max-width: 100%;
             background-color: var(--color-bg-app, #FFFFFF);
             border: 1px solid var(--color-border-subtle, #E5E7EB);
             border-radius: var(--radius-lg, 14px);
@@ -273,7 +283,9 @@
 
             .table-responsive-wrapper {
                 overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
                 width: 100%;
+                max-width: 100%;
             }
 
             .rankings-table {

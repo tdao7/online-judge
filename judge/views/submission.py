@@ -493,6 +493,8 @@ class ProblemSubmissionsBase(SubmissionsListBase):
 
     def get_context_data(self, **kwargs):
         context = super(ProblemSubmissionsBase, self).get_context_data(**kwargs)
+        context['problem'] = self.problem
+        context['problem_name'] = self.problem_name
         if self.dynamic_update:
             context['dynamic_update'] = context['page_obj'].number == 1
             context['dynamic_problem_id'] = self.problem.id
