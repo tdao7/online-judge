@@ -153,26 +153,50 @@ func main() {
 }
 """),
     ("RUST", "AC", "D", "Rust AC", """
-use std::io::{self, BufRead};
+use std::io::{self, Read, Write, BufWriter};
 fn main() {
-    let stdin = io::stdin();
-    let mut lines = stdin.lock().lines();
-    if let Some(Ok(first_line)) = lines.next() {
-        if let Ok(n) = first_line.trim().parse::<usize>() {
-            let mut count = 0;
-            for line in lines {
-                if count >= n { break; }
-                if let Ok(l) = line {
-                    let nums: Vec<i64> = l.split_whitespace().filter_map(|s| s.parse().ok()).collect();
-                    if nums.len() >= 2 {
-                        println!("{}", nums[0] + nums[1]);
-                        count += 1;
-                    }
+    let mut input = String::new();
+    io::stdin().read_to_string(&mut input).unwrap();
+    let mut tokens = input.split_whitespace();
+    let stdout = io::stdout();
+    let mut out = BufWriter::new(stdout.lock());
+    if let Some(n_str) = tokens.next() {
+        if let Ok(n) = n_str.parse::<usize>() {
+            for _ in 0..n {
+                if let (Some(a_str), Some(b_str)) = (tokens.next(), tokens.next()) {
+                    let a: i64 = a_str.parse().unwrap();
+                    let b: i64 = b_str.parse().unwrap();
+                    writeln!(out, "{}", a + b).unwrap();
                 }
             }
         }
     }
 }
+"""),
+    ("C", "AC", "D", "C AC", """
+#include <stdio.h>
+int main() {
+    int n;
+    if (scanf("%d", &n) != 1) return 0;
+    while (n--) {
+        long long a, b;
+        scanf("%lld %lld", &a, &b);
+        printf("%lld\\n", a + b);
+    }
+    return 0;
+}
+"""),
+    ("PYPY3", "AC", "D", "PyPy 3 AC", """
+import sys
+data = sys.stdin.read().split()
+if data:
+    n = int(data[0])
+    idx = 1
+    out = []
+    for _ in range(n):
+        out.append(str(int(data[idx]) + int(data[idx+1])))
+        idx += 2
+    sys.stdout.write('\\n'.join(out) + '\\n')
 """),
 ]
 
@@ -250,6 +274,6 @@ def run_test_harness():
     if not all_passed:
         print("FAILED: Some grading tests did not match expected verdicts.")
         sys.exit(1)
-    print("SUCCESS: All 12 multi-language grading tests passed with 100% accuracy!")
+    print(f"SUCCESS: All {len(results)} multi-language grading tests passed with 100% accuracy!")
 
 run_test_harness()
