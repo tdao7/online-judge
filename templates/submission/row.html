@@ -17,8 +17,8 @@
     <div class="problem-cell-wrap">
         <a href="{{ url('problem_detail', submission.problem.code) }}"
            class="sub-problem-link"
-           title="{{ problem_name or (submission.problem.i18n_name or submission.problem.name) }}">
-            {{ problem_name or (submission.problem.i18n_name or submission.problem.name) }}
+           title="{{ problem_name or submission.problem.name }}">
+            {{ problem_name or submission.problem.name }}
         </a>
     </div>
 </td>

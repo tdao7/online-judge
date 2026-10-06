@@ -495,7 +495,7 @@
                                     data-submission-id="{{ submission.id }}"
                                     data-problem-code="{{ submission.problem.code }}"
                                     data-user="{{ submission.user.user.username }}">
-                                    {% with problem_name=show_problem and (submission.problem.i18n_name or submission.problem.name) %}
+                                    {% with problem_name=show_problem and submission.problem.name %}
                                         {% include "submission/row.html" %}
                                     {% endwith %}
                                 </tr>

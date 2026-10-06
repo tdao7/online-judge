@@ -236,18 +236,13 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
             context['editorial'] = Solution.objects.get(problem=self.object)
         except ObjectDoesNotExist:
             pass
-        try:
-            translation = self.object.translations.get(language=self.request.LANGUAGE_CODE)
-        except ProblemTranslation.DoesNotExist:
-            context['title'] = self.object.name
-            context['language'] = settings.LANGUAGE_CODE
-            context['description'] = self.object.description
-            context['translated'] = False
-        else:
-            context['title'] = translation.name
-            context['language'] = self.request.LANGUAGE_CODE
-            context['description'] = translation.description
-            context['translated'] = True
+
+        # Multi-language localizes functional UI menus/controls, not problem statement content.
+        # Problem statement and title always retain their canonical content.
+        context['title'] = self.object.name
+        context['language'] = self.request.LANGUAGE_CODE
+        context['description'] = self.object.description
+        context['translated'] = False
 
         if not self.object.og_image or not self.object.summary:
             metadata = generate_opengraph('generated-meta-problem:%s:%d' % (context['language'], self.object.id),
@@ -888,18 +883,11 @@ class ProblemSubmit(LoginRequiredMixin, ProblemMixin, TitleMixin, SingleObjectFo
         context['ACE_URL'] = settings.ACE_URL
         context['default_lang'] = self.default_language
         context['problem'] = self.object
-        try:
-            translation = self.object.translations.get(language=self.request.LANGUAGE_CODE)
-        except ProblemTranslation.DoesNotExist:
-            context['title'] = self.object.name
-            context['language'] = settings.LANGUAGE_CODE
-            context['description'] = self.object.description
-            context['translated'] = False
-        else:
-            context['title'] = translation.name
-            context['language'] = self.request.LANGUAGE_CODE
-            context['description'] = translation.description
-            context['translated'] = True
+        # Multi-language localizes functional UI menus/controls, not problem statement content.
+        context['title'] = self.object.name
+        context['language'] = self.request.LANGUAGE_CODE
+        context['description'] = self.object.description
+        context['translated'] = False
         context['enable_comments'] = settings.DMOJ_ENABLE_COMMENTS
         return context
 

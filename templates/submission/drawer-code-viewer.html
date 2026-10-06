@@ -84,7 +84,7 @@
                         {% if not request.user.is_authenticated %}
                             {{ _('Please log in to view this submission’s source code.') }}
                         {% else %}
-                            {{ _('You must solve %(problem)s to view other users’ solutions.', problem=submission.problem.translated_name(request.LANGUAGE_CODE)) }}
+                            {{ _('You must solve %(problem)s to view other users’ solutions.', problem=submission.problem.name) }}
                         {% endif %}
                     </p>
                     <a href="{{ url('problem_detail', submission.problem.code) }}" class="btn-goto-problem">

@@ -338,7 +338,7 @@
                             <td class="col-problem">
                                 <div class="problem-cell-content problem-title-cell">
                                     <a href="{{ url('problem_detail', problem.code) }}" class="problem-title-link">
-                                        {{ problem.i18n_name or problem.name }}
+                                        {{ problem.name }}
                                     </a>
                                     <div class="problem-tags-wrap problem-tags">
                                         {% if problem.types_list %}

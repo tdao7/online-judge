@@ -18,7 +18,7 @@
         <div class="drawer-problem-info">
             <h3 class="drawer-problem-title">
                 <a href="{{ url('problem_detail', submission.problem.code) }}" class="problem-link">
-                    {{ submission.problem.translated_name(request.LANGUAGE_CODE) }}
+                    {{ submission.problem.name }}
                 </a>
             </h3>
             <div class="drawer-problem-meta-row">
@@ -256,7 +256,7 @@
                             <div class="locked-icon"><i class="fa fa-lock"></i></div>
                             <div class="locked-title">{{ _('Source code protected') }}</div>
                             <div class="locked-desc">
-                                {{ _('You must solve %(problem)s to view others’ solutions.', problem=submission.problem.translated_name(request.LANGUAGE_CODE)) }}
+                                {{ _('You must solve %(problem)s to view others’ solutions.', problem=submission.problem.name) }}
                             </div>
                             <a href="{{ url('problem_detail', submission.problem.code) }}" class="btn-goto-problem">
                                 {{ _('Solve Problem') }} &rarr;
