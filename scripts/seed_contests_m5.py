@@ -16,7 +16,7 @@ import django
 django.setup()
 
 from django.utils import timezone
-from judge.models import Contest, Problem, ContestProblem, ProblemType, ProblemGroup, Language, Judge
+from judge.models import Contest, Problem, ContestProblem, ProblemType, ProblemGroup, Language, Judge, LanguageLimit
 
 now = timezone.now()
 
@@ -248,6 +248,10 @@ for sp in sample_problems:
         p.points = sp['points']
         p.save()
     p.allowed_languages.set(all_langs)
+    for lk, tl, ml in [('JAVA8', 10.0, 262144), ('JAVA', 10.0, 262144), ('PY3', 5.0, 262144), ('PY2', 5.0, 262144), ('PYPY3', 5.0, 262144)]:
+        l_obj = Language.objects.filter(key=lk).first()
+        if l_obj:
+            LanguageLimit.objects.update_or_create(problem=p, language=l_obj, defaults={'time_limit': tl, 'memory_limit': ml})
     for t_name in sp['types']:
         pt, _ = ProblemType.objects.get_or_create(name=t_name)
         p.types.add(pt)
@@ -269,7 +273,11 @@ for sp in sample_problems:
 # Also link aplusb to ongoing contest cf965, monthly2026, and wcc2026
 p_aplusb = Problem.objects.filter(code='aplusb').first()
 if p_aplusb:
-
+    p_aplusb.allowed_languages.set(all_langs)
+    for lk, tl, ml in [('JAVA8', 10.0, 262144), ('JAVA', 10.0, 262144), ('PY3', 5.0, 262144), ('PY2', 5.0, 262144), ('PYPY3', 5.0, 262144)]:
+        l_obj = Language.objects.filter(key=lk).first()
+        if l_obj:
+            LanguageLimit.objects.update_or_create(problem=p_aplusb, language=l_obj, defaults={'time_limit': tl, 'memory_limit': ml})
     ContestProblem.objects.get_or_create(contest=c_cf, problem=p_aplusb, defaults={'points': 100, 'order': 1, 'output_prefix_override': 0})
     for c_obj in (c_monthly, c_wcc):
         cp_aplusb, _ = ContestProblem.objects.get_or_create(contest=c_obj, problem=p_aplusb, defaults={'points': 50, 'order': 4, 'output_prefix_override': 0})

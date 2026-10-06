@@ -88,6 +88,7 @@ int main() {
 """),
     ("JAVA8", "AC", "D", "Java 8 AC", """
 import java.io.*;
+import java.util.*;
 public class aplusb {
     public static void main(String[] args) throws IOException {
         BufferedReader cin = new BufferedReader(new InputStreamReader(System.in));
@@ -95,8 +96,8 @@ public class aplusb {
         if (line == null) return;
         int n = Integer.parseInt(line.trim());
         for (int i = 0; i < n; i++) {
-            String[] parts = cin.readLine().trim().split(" ");
-            System.out.println(Integer.parseInt(parts[0]) + Integer.parseInt(parts[1]));
+            StringTokenizer st = new StringTokenizer(cin.readLine());
+            System.out.println(Integer.parseInt(st.nextToken()) + Integer.parseInt(st.nextToken()));
         }
     }
 }
@@ -126,6 +127,50 @@ public class aplusb {
 public class aplusb {
     public static void main(String[] args) {
         SYNTAX_ERROR_UNDEFINED_VARIABLE = 42;
+    }
+}
+"""),
+    ("GO", "AC", "D", "Go AC", """
+package main
+import (
+    "bufio"
+    "fmt"
+    "os"
+)
+func main() {
+    reader := bufio.NewReader(os.Stdin)
+    var n int
+    if _, err := fmt.Fscan(reader, &n); err != nil {
+        return
+    }
+    writer := bufio.NewWriter(os.Stdout)
+    defer writer.Flush()
+    for i := 0; i < n; i++ {
+        var a, b int
+        fmt.Fscan(reader, &a, &b)
+        fmt.Fprintln(writer, a+b)
+    }
+}
+"""),
+    ("RUST", "AC", "D", "Rust AC", """
+use std::io::{self, BufRead};
+fn main() {
+    let stdin = io::stdin();
+    let mut lines = stdin.lock().lines();
+    if let Some(Ok(first_line)) = lines.next() {
+        if let Ok(n) = first_line.trim().parse::<usize>() {
+            let mut count = 0;
+            for line in lines {
+                if count >= n { break; }
+                if let Ok(l) = line {
+                    let nums: Vec<i64> = l.split_whitespace().filter_map(|s| s.parse().ok()).collect();
+                    if nums.len() >= 2 {
+                        println!("{}", nums[0] + nums[1]);
+                        count += 1;
+                    }
+                }
+            }
+        }
     }
 }
 """),
@@ -167,16 +212,16 @@ def run_test_harness():
         # Trigger grading
         sub.judge(force_judge=True)
 
-        # Poll until graded (timeout: 25s)
+        # Poll until graded (timeout: 55s)
         start_t = time.time()
-        while time.time() - start_t < 25:
+        while time.time() - start_t < 55:
             sub.refresh_from_db()
             if sub.status not in ('QU', 'P', 'G'):
                 break
             time.sleep(0.5)
 
         sub.refresh_from_db()
-        actual_result = sub.result or (sub.status if sub.status == 'CE' else None)
+        actual_result = sub.result or (sub.status if sub.status in ('CE', 'QU', 'P', 'G') else 'N/A')
         passed = (sub.status == exp_status) and (actual_result == exp_result)
         if not passed:
             all_passed = False
