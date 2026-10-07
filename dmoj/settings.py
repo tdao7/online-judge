@@ -30,8 +30,8 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 SITE_ID = 1
-SITE_NAME = 'DMOJ'
-SITE_LONG_NAME = 'DMOJ: Modern Online Judge'
+SITE_NAME = 'VCoder Arena'
+SITE_LONG_NAME = 'VCoder Arena'
 SITE_ADMIN_EMAIL = ''
 
 DMOJ_REQUIRE_STAFF_2FA = True

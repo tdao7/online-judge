@@ -6312,8 +6312,8 @@ msgstr "Đường dẫn"
 msgid "Browse Problems"
 msgstr "Khám phá bài tập"
 
-msgid "Browse and practice programming problems from DMOJ."
-msgstr "Luyện tập và giải các bài toán lập trình trên hệ thống."
+msgid "Browse and practice programming problems on VCoder Arena."
+msgstr "Luyện tập và giải các bài toán lập trình trên VCoder Arena."
 
 msgid "Change language"
 msgstr "Đổi ngôn ngữ"
@@ -6747,8 +6747,14 @@ msgstr "Thí sinh đã xác thực"
 msgid "View Final Standings"
 msgstr "Xem bảng xếp hạng chung cuộc"
 
-msgid "View and analyze your submission history on DMOJ."
-msgstr "Xem và phân tích lịch sử nộp bài của bạn."
+msgid "View and analyze your submission history on VCoder Arena."
+msgstr "Xem và phân tích lịch sử nộp bài của bạn trên VCoder Arena."
+
+msgid "See the top competitive programmers on VCoder Arena."
+msgstr "Bảng vinh danh các lập trình viên hàng đầu trên VCoder Arena."
+
+msgid "Welcome to VCoder Arena"
+msgstr "Chào mừng đến với VCoder Arena"
 
 msgid "View full submission page"
 msgstr "Xem toàn bộ trang bài nộp"
