@@ -30,6 +30,7 @@ django.setup()
 
 from django.utils import timezone
 from judge.models import Problem, ProblemGroup, ProblemType, Language, Judge, LanguageLimit
+from scripts.problem_titles_bank import get_title, get_story_description
 
 # Base directory for problem test data on the server
 # If running on remote server: /home/tdao7/dmoj-judge/problems
@@ -203,8 +204,8 @@ def generate_problem_specs(domain, index):
             ("Quy đổi thời gian giây sang H:M:S", "Cho tổng số giây $S$. Đổi sang định dạng Giờ, Phút, Giây.", "time_conv", 20),
         ]
         base = subtopics[(index - 1) % len(subtopics)]
-        title = f"{base[0]} #{index}"
-        desc = base[1]
+        title = get_title("cb", index)
+        desc = get_story_description("cb", index, title)
         op = base[2]
         pts = base[3] + (index % 5) * 2
 
@@ -263,8 +264,8 @@ def generate_problem_specs(domain, index):
             ("Kiểm tra tọa độ điểm trong góc phần tư", "Cho tọa độ $(x, y)$. Xác định điểm thuộc góc phần tư I, II, III, IV hay trục tọa độ.", "quadrant", 25),
         ]
         base = subtopics[(index - 1) % len(subtopics)]
-        title = f"{base[0]} #{index}"
-        desc = base[1]
+        title = get_title("dk", index)
+        desc = get_story_description("dk", index, title)
         op = base[2]
         pts = base[3] + (index % 4) * 2
 
@@ -317,8 +318,8 @@ def generate_problem_specs(domain, index):
 
     elif prefix == "vl":
         # Loops
-        title = f"Vòng lặp & Dãy số — Biến thể #{index}"
-        desc = f"Cho số nguyên dương $N$. Hãy tính tổng dãy số hoặc xử lý chuỗi giá trị tương ứng từ $1$ đến $N$ theo quy luật toán học bậc {index % 5 + 1}."
+        title = get_title("vl", index)
+        desc = get_story_description("vl", index, title)
         pts = 20 + (index % 10) * 2
         def solver(input_str):
             n = int(input_str.strip())
@@ -344,8 +345,8 @@ def generate_problem_specs(domain, index):
 
     elif prefix == "vt":
         # 1D Arrays
-        title = f"Mảng một chiều — Bài toán số #{index}"
-        desc = f"Cho mảng gồm $N$ số nguyên $A_1, A_2, \\dots, A_N$. Hãy tìm giá trị đặc trưng hoặc mảng con thỏa mãn điều kiện theo truy vấn thứ #{index}."
+        title = get_title("vt", index)
+        desc = get_story_description("vt", index, title)
         pts = 25 + (index % 10) * 2
         def solver(input_str):
             lines = input_str.strip().split("\n")
@@ -370,8 +371,8 @@ def generate_problem_specs(domain, index):
 
     elif prefix == "mt":
         # 2D Matrices
-        title = f"Ma trận & Bảng số — Truy vấn #{index}"
-        desc = f"Cho ma trận kích thước $N \\times M$ chứa các số nguyên. Hãy thực hiện biến đổi ma trận hoặc tính tổng các đường biên/đường chéo theo yêu cầu."
+        title = get_title("mt", index)
+        desc = get_story_description("mt", index, title)
         pts = 30 + (index % 10) * 3
         def solver(input_str):
             lines = input_str.strip().split("\n")
@@ -390,8 +391,8 @@ def generate_problem_specs(domain, index):
 
     elif prefix == "str":
         # String Manipulation
-        title = f"Xử lý chuỗi ký tự — Thách thức #{index}"
-        desc = f"Cho chuỗi văn bản $S$. Hãy kiểm tra tính đối xứng, đếm số lượng từ hoặc biến đổi chuỗi theo tiêu chuẩn phân tích cú pháp #{index}."
+        title = get_title("str", index)
+        desc = get_story_description("str", index, title)
         pts = 25 + (index % 10) * 2
         def solver(input_str):
             s = input_str.strip()
@@ -413,8 +414,8 @@ def generate_problem_specs(domain, index):
 
     elif prefix == "fnc":
         # Recursion & Backtracking
-        title = f"Đệ quy & Quay lui — Thuật toán #{index}"
-        desc = f"Cho số nguyên $N$. Sử dụng phương pháp đệ quy hoặc quay lui để sinh tất cả các cấu hình tổ hợp hoặc tính giá trị hàm đệ quy thứ $N$."
+        title = get_title("fnc", index)
+        desc = get_story_description("fnc", index, title)
         pts = 35 + (index % 10) * 3
         def solver(input_str):
             n = int(input_str.strip())
@@ -434,8 +435,8 @@ def generate_problem_specs(domain, index):
 
     elif prefix == "srt":
         # Sorting & Searching
-        title = f"Sắp xếp & Tìm kiếm nhị phân — Bài #{index}"
-        desc = f"Cho mảng $N$ phần tử và các giá trị cần tìm kiếm. Hãy sắp xếp mảng theo thứ tự tăng dần và xác định vị trí của các phần tử mục tiêu."
+        title = get_title("srt", index)
+        desc = get_story_description("srt", index, title)
         pts = 30 + (index % 10) * 3
         def solver(input_str):
             lines = input_str.strip().split("\n")
@@ -452,8 +453,8 @@ def generate_problem_specs(domain, index):
 
     elif prefix == "mth":
         # Number Theory
-        title = f"Số học & Lý thuyết số — Định lý #{index}"
-        desc = f"Cho số nguyên $N$. Hãy kiểm tra tính nguyên tố, tìm ước số chung lớn nhất hoặc tính giá trị hàm số học theo modulo lớn."
+        title = get_title("mth", index)
+        desc = get_story_description("mth", index, title)
         pts = 40 + (index % 10) * 4
         def solver(input_str):
             n = int(input_str.strip())
@@ -473,8 +474,8 @@ def generate_problem_specs(domain, index):
 
     elif prefix == "dp":
         # Dynamic Programming
-        title = f"Quy hoạch động — Bài toán tối ưu #{index}"
-        desc = f"Cho mảng $N$ phần tử. Hãy tìm độ dài dãy con tăng dài nhất (LIS) hoặc tổng lớn nhất của tập hợp các phần tử không kề nhau."
+        title = get_title("dp", index)
+        desc = get_story_description("dp", index, title)
         pts = 45 + (index % 10) * 5
         def solver(input_str):
             lines = input_str.strip().split("\n")
@@ -497,8 +498,8 @@ def generate_problem_specs(domain, index):
 
     elif prefix == "gr":
         # Graphs
-        title = f"Đồ thị & Cây — Thuật toán mạng #{index}"
-        desc = f"Cho đồ thị vô hướng $G = (V, E)$ gồm $N$ đỉnh và $M$ cạnh. Hãy xác định số lượng thành phần liên thông hoặc kiểm tra tính liên thông giữa các đỉnh."
+        title = get_title("gr", index)
+        desc = get_story_description("gr", index, title)
         pts = 50 + (index % 10) * 5
         def solver(input_str):
             lines = input_str.strip().split("\n")
@@ -530,8 +531,8 @@ def generate_problem_specs(domain, index):
         ]
 
     else: # ds (Advanced Data Structures)
-        title = f"Cấu trúc dữ liệu nâng cao — Hệ thống #{index}"
-        desc = f"Cho dãy $N$ phần tử và $Q$ truy vấn cập nhật điểm hoặc tính tổng đoạn (Range Sum Query). Hãy trả về kết quả cho từng truy vấn."
+        title = get_title("ds", index)
+        desc = get_story_description("ds", index, title)
         pts = 55 + (index % 10) * 5
         def solver(input_str):
             lines = input_str.strip().split("\n")

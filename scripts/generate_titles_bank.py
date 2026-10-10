@@ -1,0 +1,321 @@
+# Generator for scripts/problem_titles_bank.py
+import json
+
+cb_titles = [
+    "Mua trà sữa trân châu", "Tính tiền đổ xăng", "Chia kẹo ngày Tết", "Đổi tiền mừng tuổi", "Chu vi vườn rau của Ngoại",
+    "Diện tích căn phòng nhỏ", "Cắt bánh sinh nhật", "Bánh xe đạp của Nam", "Đổi nhiệt độ phòng thí nghiệm", "Đồng hồ bấm giờ thể thao",
+    "Tiền tip cho tài xế", "Hóa đơn tiền điện tháng này", "Giỏ hàng siêu thị cuối tuần", "Cân nặng hành lý ký gửi", "Chia cam cho các em nhỏ",
+    "Heo đất tiết kiệm", "Bình xăng xe máy tay ga", "Sơn bức tường phòng học", "Chu vi sân bóng rổ mini", "Thời gian làm bài kiểm tra",
+    "Trồng cây xanh quanh trường", "Đếm bước đi bộ buổi sáng", "Mua bút chì và thước kẻ", "Mảnh đất tam giác ven sông", "Vận tốc xe đạp điện",
+    "Bình nước thể thao học sinh", "Đổi ngoại tệ du lịch", "Tiền gửi xe máy tháng", "Chiều cao cột cờ sân trường", "Đọc sách truyện tranh",
+    "Đóng gói kiện hàng chuyển phát", "Mua mì tôm trữ bão", "Chi phí vé xem phim cuối tuần", "Pha nước chanh mật ong", "Tiền cước xe taxi",
+    "Dung lượng pin dự phòng", "Lát gạch hoa sàn nhà", "Cắm hoa tặng mẹ", "Trà chanh chém gió", "Nhiệt độ bồn tắm trẻ em",
+    "Chia phần bánh gato", "Khay trứng gà tươi", "Giặt ủi quần áo sinh viên", "Đoạn đường đi bộ đến trường", "Bể bơi thiếu nhi",
+    "Thảm cỏ công viên trung tâm", "Hộp kẹo socola ngọt ngào", "Cân rau củ nấu canh", "Thời gian đun ấm nước sôi", "Tốc độ tải tập tin",
+    "Ngày nghỉ lễ trong năm", "Bộ sách giáo khoa mới", "Pha sữa cho em bé", "Cuộn dây thừng cứu hộ", "Lượng nước tưới vườn hoa",
+    "Vận tốc kình ngư nhí", "Thuê truyện tranh cuối tuần", "Bữa sáng với bánh mì sandwich", "Vé tháng xe buýt thông minh", "Nồi cơm niêu gia đình",
+    "Bao gạo từ thiện", "Kem que giải nhiệt mùa hè", "Bậc cầu thang bộ chung cư", "Sạc pin điện thoại thông minh", "Giọt nước rò rỉ",
+    "Xếp các tờ tiền polymer", "In ấn tài liệu học tập", "Mái nhà ngói đỏ", "Mặt đồng hồ cổ điển", "Bình thủy tinh nuôi cá",
+    "Trả góp mua máy tính", "Thước kẻ gỗ thân thiện", "Bóng đèn tiết kiệm điện", "Thời gian phơi quần áo", "Đo lượng calo bữa ăn",
+    "Thìa đường nấu chè đậu xanh", "Khung tranh phong cảnh", "Cuốn sổ tay ghi chú", "Thả diều trên triền đê", "Quy đổi giây sang phút",
+    "Cước viễn thông di động", "Chiều dài hành lang thư viện", "Quả dưa hấu giải khát", "Bóng bay trang trí khai giảng", "Ly cà phê sữa đá",
+    "Diện tích mặt bàn làm việc", "Mầm cây non nhú lộc", "Chạy tiếp sức sân trường", "Lọ thủy tinh đựng hạt đậu", "Lượng mưa ngày đầu thu",
+    "Sổ tiết kiệm ngân hàng", "Chiếc compa vẽ đường tròn", "Bánh quy bơ hộp thiếc", "Chuyến xe buýt chở học sinh", "Hộp sữa tươi tiệt trùng",
+    "Ánh sáng đèn bàn học", "Mẻ bánh nướng thơm lừng", "Dãy ghế rạp hát thành phố", "Bó hoa hồng tặng cô giáo", "Khúc gỗ của bác thợ mộc"
+]
+
+dk_titles = [
+    "Vé vào cổng công viên nước", "Năm nhuận của Minh", "Tam giác cảnh báo nguy hiểm", "Cân nặng chuẩn theo BMI", "Xếp loại học lực cuối kỳ",
+    "Đèn tín hiệu giao thông", "Mã giảm giá trực tuyến", "Giờ mở cửa bảo tàng lịch sử", "Phí ship đồ ăn ban đêm", "Điểm sàn xét tuyển đại học",
+    "Kiểm tra số chính phương", "Hóa đơn tính cước lũy tiến", "Cửa kiểm soát an ninh sân bay", "Dự báo thời tiết ngày mai", "Chọn kích cỡ áo phông",
+    "Bằng lái xe máy đủ tuổi", "Phân loại giác mạc cận thị", "Độ tuổi xem phim rạp", "Đánh giá chất lượng không khí", "Hạn mức giao dịch thẻ ATM",
+    "Kiểm tra tam giác vuông", "Vé tàu hỏa giảm giá trẻ em", "Phân hạng giải thưởng cuộc thi", "Cảnh báo sạc pin quá nhiệt", "Mua sắm hoàn tiền tích điểm",
+    "Phân luồng xe tải giờ cao điểm", "Đánh giá chỉ số sức khỏe", "Kiểm tra số đối xứng ba chữ số", "Thuế thu nhập cá nhân", "Phân loại bưu phẩm chuyển phát",
+    "Điều hòa nhiệt độ tự động", "Kiểm tra tài khoản đủ số dư", "Chiết khấu khách hàng thân thiết", "Xác định góc phần tư tọa độ", "Kiểm tra tính hợp lệ của ngày tháng",
+    "Đỗ xe đúng khu vực quy định", "Giờ vàng khuyến mãi siêu thị", "Phân loại hạt cà phê xuất khẩu", "Kiểm định chất lượng nước sạch", "Cảnh báo tốc độ xe ô tô",
+    "Trạng thái kết nối mạng", "Xếp hạng huy chương Olympic", "Cửa thang máy cảm ứng", "Đổi điểm rèn luyện sinh viên", "Phân loại rác thải sinh hoạt",
+    "Kiểm tra điều kiện vay vốn", "Độ chín của trái cây thu hoạch", "Đánh giá mức độ hài lòng dịch vụ", "Xác thực vân tay hợp lệ", "Hệ số lương theo thâm niên",
+    "Kiểm tra ba điểm thẳng hàng", "Thang đo địa chấn Richter", "Cảnh báo mực nước hồ thủy điện", "Đăng ký gói cước 4G phù hợp", "Phân hạng sao khách sạn nghỉ dưỡng",
+    "Thời gian bảo hành sản phẩm", "Kiểm tra mã thẻ cào điện thoại", "Tiêu chuẩn chọn phi công", "Cảnh báo cháy rừng mùa khô", "Phân loại nhóm máu hiến tặng",
+    "Tính tiền cước taxi ban đêm", "Đánh giá độ ồn khu dân cư", "Cửa tự động mở khi có người", "Phân luồng phỏng vấn tuyển dụng", "Hạn sử dụng thuốc men",
+    "Trạng thái đèn đường phố", "Quy định hành lý xách tay", "Mua bảo hiểm du lịch quốc tế", "Bảng giá vé xem ca nhạc", "Kiểm tra số nguyên tố nhỏ",
+    "Phân loại học sinh năng khiếu", "Đánh giá mức tiêu hao năng lượng", "Cảnh báo thời gian nghỉ ngơi mắt", "Kiểm tra mã số trúng thưởng", "Cấp độ bão nhiệt đới",
+    "Xếp hạng tín nhiệm tín dụng", "Đặt bàn nhà hàng giờ đông khách", "Kiểm tra thẻ sinh viên vào cổng", "Giới hạn độ tuổi chơi game", "Phí phạt trả chậm sách thư viện",
+    "Phân loại xe ưu tiên cứu hộ", "Kiểm tra định mức sử dụng nước", "Độ bền kéo sợi vải", "Hạn ngạch nhập khẩu linh kiện", "Xác định mùa trong năm",
+    "Cảnh báo độ ẩm phòng máy chủ", "Tiêu chí tuyển sinh lớp chọn", "Thẻ tập gym theo khung giờ", "Kiểm tra năm sinh hợp tuổi", "Phân loại chất lượng gỗ rừng",
+    "Điểm thưởng khi bay thường xuyên", "Kiểm tra số chia hết cho 3 và 5", "Trạng thái sạc pin năng lượng mặt trời", "Cảnh báo tia cực tím UV", "Phân bổ ngân sách phòng ban",
+    "Kiểm định an toàn thang máy", "Giờ giới nghiêm ký túc xá", "Điều kiện nhận học bổng tài năng", "Kiểm tra cân nặng võ sĩ thi đấu", "Đánh giá độ dốc đường đèo"
+]
+
+vl_titles = [
+    "Bậc thang thần kỳ", "Đếm bước chạy bộ", "Ống heo tiết kiệm", "Gấp giấy origami", "Nhảy dây tập thể",
+    "Bảng cửu chương của Bé", "Giọt nước tích tiểu thành đại", "Tháp cát bờ biển", "Đoàn tàu hỏa Bắc Nam", "Chong chóng quay trong gió",
+    "Dãy số hạt cườm may mắn", "Đếm cừu trước khi ngủ", "Bắn pháo hoa đêm giao thừa", "Tiếng ve ngân mùa hạ", "Vòng quay đu quay công viên",
+    "Nhịp tim khi leo núi", "Đèn nháy trang trí Giáng Sinh", "Xếp tháp bài tây", "Nước dâng trên ruộng bậc thang", "Bước nhảy của chú ếch con",
+    "Đếm lá rơi mùa thu", "Tiếng chuông nhà thờ cổ", "Đồng hồ quả lắc gõ nhịp", "Vòng tròn đồng tâm sóng nước", "Đếm sao trên bầu trời đêm",
+    "Số trang của bách khoa toàn thư", "Bước chân hành quân đêm", "Hạt gạo trên bàn cờ truyền thuyết", "Cầu vồng sau cơn mưa", "Vòng tuần hoàn của giọt sương",
+    "Đếm nhịp đàn piano", "Bước chân khiêu vũ van-xơ", "Bậc thang chùa Yên Tử", "Hàng cây cổ thụ rợp bóng", "Tiếng gõ mõ thanh tịnh",
+    "Đếm đồng xu vàng kho báu", "Vòng bi lăn trên đường ray", "Hạt mưa rơi trên mái tôn", "Bánh xe quay trên đường dốc", "Tiếng tích tắc đồng hồ cát",
+    "Xếp hàng diễu hành lễ hội", "Bước nhảy lò cò tuổi thơ", "Cánh hoa bồ công anh bay", "Đếm số hạt lúa mùa gặt", "Con quay gỗ của Tuấn",
+    "Vòng bơi lội quanh hồ", "Tiếng gõ bàn phím lập trình", "Nhịp đập cánh của chim sâu", "Ngọn sóng vỗ bờ cát trắng", "Đếm cọc tiêu đường quốc lộ",
+    "Hạt sỏi rải lối đi sân vườn", "Vòng xoay ngựa gỗ cổ tích", "Bậc cầu vồng sắc màu", "Đếm số ngày đếm ngược thi cử", "Tích lũy dặm bay hàng không",
+    "Vòng quay may mắn hội chợ", "Số hạt ngọc trên chuỗi vòng", "Tiếng còi xe lửa vang xa", "Đếm bước đi trên cát mịn", "Vòng tròn tuổi đời thân cây",
+    "Bước nhảy ba bước xa", "Dãy số đèn led trang trí", "Nhịp chèo thuyền vượt sông", "Bậc thang nhà sàn Tây Bắc", "Đếm nhịp thở khi thiền định",
+    "Vòng quay bánh xe nước mát", "Tiếng vó ngựa trên đường mòn", "Hạt nắng rơi qua kẽ lá", "Bậc tam cấp trước sân đình", "Đếm số lần nháy đèn hải đăng",
+    "Dãy số domino liên hoàn", "Bước chân người tuần rừng", "Vòng chạy tiếp sức Olympic", "Tiếng gõ gậy của ông cụ", "Đếm số giọt mưa phùn",
+    "Bậc đá hoa cương quảng trường", "Cánh quạt trần quay đều", "Tiếng bước chân trên thảm tuyết", "Hàng rào trắng quanh nông trại", "Đếm số nhịp chớp mắt",
+    "Vòng tuần tra của vệ sĩ", "Bước đi trên dây xiếc", "Tiếng tích tắc bom hẹn giờ", "Đếm chu kỳ sao băng", "Hạt cát lọt qua kẽ tay",
+    "Vòng quay trục sợi dệt vải", "Bậc thang xoắn ốc tháp cổ", "Đếm số hạt sương ban mai", "Tiếng gõ chiêng làng Tây Nguyên", "Bước nhảy của chú thỏ trắng",
+    "Vòng tuần hoàn giọt nước mưa", "Dãy cột mốc biên giới", "Đếm số vòng bánh xe lu", "Nhịp đập cánh chim hải âu", "Bậc thang lên đỉnh Fansipan",
+    "Tiếng chuông gió ngân nga", "Đếm hoa sen nở trong hồ", "Bước đi chậm rãi của rùa con", "Vòng lăn chiếc lốp xe cũ", "Đếm sao trời giữa sa mạc"
+]
+
+vt_titles = [
+    "Học sinh cao nhất khối", "Nhiệt độ các ngày trong tuần", "Điểm thi tuyển sinh đầu vào", "Xếp hàng mua bánh mì Phố Cổ", "Doanh thu chuỗi cửa hàng tiện lợi",
+    "Giá cổ phiếu công nghệ biến động", "Thước đo mực nước sông Hồng", "Chọn đôi bạn cùng tiến học tập", "Thời gian về đích giải Marathon", "Độ cao các cột mốc đường mòn",
+    "Cân nặng của đàn gia súc", "Lượng điện tiêu thụ từng căn hộ", "Số lượt khách ghé thăm bảo tàng", "Chiều dài các toa tàu hỏa", "Tốc độ gió tại các trạm đo",
+    "Điểm số các hiệp đấu bóng rổ", "Lượng mưa đo tại các quận huyện", "Độ sáng các bóng đèn hành lang", "Mức pin của dàn máy bay drone", "Số lượng sách mượn theo ngày",
+    "Độ tuổi các thành viên câu lạc bộ", "Độ sâu các điểm lặn biển san hô", "Bảng giá phòng khách sạn mùa cao điểm", "Thời gian phản hồi của máy chủ", "Mực nước trong các bình chứa",
+    "Số lượng chim di cư đếm được", "Độ bền kéo của các mẫu thép", "Chiều cao các vận động viên bóng chuyền", "Cự ly nhảy xa các lượt nhảy", "Tần suất xuất hiện sóng radio",
+    "Trọng lượng các bao nông sản", "Số bước nhảy của các đấu thủ", "Mức tiêu hao nhiên liệu trên từng chặng", "Dung tích các chai nước suối", "Tỉ lệ đỗ tốt nghiệp các trường",
+    "Số lượng đơn hàng mỗi giờ", "Điểm số bài thi năng khiếu", "Khoảng cách giữa các trạm dừng chân", "Độ dày của các lớp địa tầng", "Tiền lương của công nhân nhà máy",
+    "Tốc độ dòng chảy các nhánh sông", "Số lượng xe qua trạm thu phí", "Giá vé máy bay theo từng ngày bay", "Mức độ ô nhiễm bụi mịn theo giờ", "Chiều cao thân cây trong rừng thực nghiệm",
+    "Doanh số bán hàng của nhân viên", "Điểm số các vòng thi hoa hậu", "Số lượng khán giả tại các khán đài", "Độ phì nhiêu của các luống rau", "Thời gian chờ đợi tại quầy dịch vụ",
+    "Trọng lượng cá thu hoạch mỗi mẻ", "Số lượt bình chọn cho thí sinh", "Cường độ ánh sáng tại các góc chụp", "Tốc độ quay của tua-bin gió", "Điểm số đánh giá ứng dụng di động",
+    "Số lượng học sinh vắng mặt mỗi lớp", "Độ ẩm không khí trong các nhà kính", "Khoảng cách ném lao của vận động viên", "Giá bán căn hộ theo từng tầng", "Lượng khí thải đo tại các nhà máy",
+    "Thời gian nấu chín các món ăn", "Số lượt tương tác trên mạng xã hội", "Mức nước dâng tại các âu thuyền", "Chiều cao đợt sóng biển dâng", "Số ghế trống trên các chuyến tàu",
+    "Độ đàn hồi của các loại đệm", "Số lỗi phát hiện trong các mô-đun code", "Mức giảm giá của các mặt hàng", "Độ dẫn điện của các mẫu dung dịch", "Số cây xanh trồng trên từng tuyến phố",
+    "Thời gian hoàn thành vòng đua F1", "Trọng lượng kiện hàng trên băng chuyền", "Số lượng giọt tinh dầu chiết xuất", "Độ sâu rễ cây bám vào đất", "Điểm số kiểm tra chất lượng sản phẩm",
+    "Lượng đường huyết đo theo bữa ăn", "Tần số âm thanh các nốt nhạc", "Số câu trả lời đúng của học sinh", "Khoảng cách bắn bia của xạ thủ", "Thời lượng sử dụng pin tai nghe không dây",
+    "Nhiệt độ bề mặt các tấm pin năng lượng", "Số đơn thuốc cấp tại phòng khám", "Độ rung chấn đo tại các trạm địa chấn", "Khối lượng vàng dự trữ trong các két", "Số lượng tin nhắn gửi đi trong ngày",
+    "Cường độ tín hiệu WiFi tại các phòng", "Thời gian xếp hàng tại công viên giải trí", "Số trang tài liệu scan mỗi đợt", "Điểm số năng suất lao động", "Tốc độ lướt sóng của vận động viên",
+    "Chi phí vận chuyển các kiện hàng", "Số lượng hạt mầm nảy mầm", "Mức nước tiêu thụ tại các phân xưởng", "Điểm kiểm định xe cơ giới", "Số lượng xe đạp công cộng tại các trạm",
+    "Độ cứng của các khối đá tự nhiên", "Thời gian sạc xe điện tại các trụ", "Số ca phẫu thuật thành công", "Điểm tín dụng cá nhân của khách hàng", "Lượng phù sa bồi đắp hàng năm"
+]
+
+mt_titles = [
+    "Bản đồ ô vuông kho báu hải tặc", "Khu đất phân lô ven đô", "Bàn cờ vua hoàng gia", "Trận địa tàu chiến trên biển", "Vườn ươm hoa phong lan",
+    "Tấm thảm dệt hoa văn Ba Tư", "Ma trận camera an ninh ngân hàng", "Hồ nuôi tôm công nghệ cao", "Bản đồ nhiệt đô thị vệ tinh", "Mê cung trên giấy kẻ ô",
+    "Bàn cờ vây của bậc danh kỳ", "Sơ đồ chỗ ngồi rạp chiếu phim", "Khay bánh cupcake nhiều màu", "Bãi đỗ xe thông minh ngầm", "Vườn bách thảo hoàng gia",
+    "Bảng led quảng cáo ngã tư", "Ruộng bậc thang Tây Bắc nhìn từ trên cao", "Mạng lưới đường ống tưới nhỏ giọt", "Bàn phím số điện thoại cổ điển", "Trận đồ bát quái Khổng Minh",
+    "Tấm pin mặt trời trên mái nhà", "Bảng phân công ca trực bệnh viện", "Bảng màu tranh ghép mosaic", "Thùng chứa linh kiện vi mạch", "Mạng lưới trạm thu phát sóng di động",
+    "Ô số may mắn trên tấm vé cào", "Đầm sen Đồng Tháp Mười", "Sơ đồ kho hàng logistics thông minh", "Lưới điện cao thế vùng đồng bằng", "Vườn chè Ô Long bát ngát",
+    "Bàn bi-a lỗ thi đấu quốc tế", "Mảng cảm biến áp suất gối ngủ", "Bảng hiển thị thông tin chuyến bay", "Khay đá viên trong tủ lạnh", "Vườn ươm cây lâm nghiệp nhiệt đới",
+    "Lưới an toàn giàn khoan dầu khí", "Tấm ảnh vi mô tế bào thực vật", "Bản đồ địa hình sa bàn quân sự", "Bãi đỗ container cảng Hải Phòng", "Ma trận pixel màn hình OLED",
+    "Lưới tản nhiệt máy chủ trung tâm", "Bàn cờ cá ngựa rực rỡ", "Khu nuôi trồng thủy sản ven biển", "Sơ đồ gian hàng hội chợ quốc tế", "Lưới định vị máy bay không người lái",
+    "Vườn hoa Tulip Hà Lan", "Bàn làm việc chung co-working", "Mạng lưới cống thoát nước ngầm", "Bảng mã QR đa điểm", "Ruộng muối Sa Huỳnh phẳng lặng",
+    "Khung cửa sổ song sắt nghệ thuật", "Bảng dự báo thời tiết 2D", "Bãi giữ xe máy trường đại học", "Tấm khiên chắn giọt bắn laser", "Bàn cờ Othello đảo màu",
+    "Vườn thanh long Bình Thuận rực sáng đêm", "Sơ đồ bố trí đèn sân khấu", "Bảng tuần hoàn nguyên tố hóa học", "Ma trận trọng số tuyến đường cao tốc", "Bãi cỏ sân vận động quốc gia",
+    "Lưới cảm ứng màn hình iPad", "Khay bánh pizza nướng lò", "Vườn rau khí canh nhà kính", "Bàn xoay làm đồ gốm Bát Tràng", "Sơ đồ phòng khách sạn 5 sao",
+    "Lưới quan trắc khí hậu đo gió", "Khay đựng mẫu máu xét nghiệm", "Bức tường tranh gốm ven sông", "Bảng xếp hạng ma trận giải đấu", "Bản đồ đáy biển dò khoáng sản",
+    "Trại nuôi nấm linh chi hữu cơ", "Lưới bắt muỗi điện tử", "Khung dệt vải thổ cẩm Sa Pa", "Sơ đồ pin Lithium-ion đa cell", "Bàn cờ Tướng giao hữu hè",
+    "Ruộng bậc thang Mù Cang Chải", "Bãi đáp trực thăng tòa nhà Bitexco", "Lưới chắn bóng sân tập golf", "Ma trận mã hóa tin nhắn mật", "Bàn làm gốm nghệ thuật truyền thống",
+    "Mạng lưới cảm biến đo nồng độ mặn", "Bảng điều khiển nhà máy hạt nhân", "Vườn cam sành trĩu quả", "Sơ đồ tủ sách thông minh thư viện", "Lưới phân tích phổ ánh sáng",
+    "Khay làm kem que trái cây", "Bàn cờ caro nghẹt thở", "Khu bảo tồn rùa biển Côn Đảo", "Bản đồ quy hoạch đô thị mới", "Lưới thép gia cố cầu dây văng",
+    "Ma trận âm thanh vòm rạp hát", "Tấm lưới kéo cá ngư dân Phú Quốc", "Bảng chấm công nhận diện khuôn mặt", "Vườn dưa lưới công nghệ Israel", "Khay phân loại ốc vít cơ khí",
+    "Sơ đồ mạng máy tính văn phòng", "Bản đồ quét Radar thời tiết", "Bàn bida carom 3 băng đỉnh cao", "Lưới chống sét trạm biến áp", "Bảng tổ ong đựng trang sức ngọc trai"
+]
+
+str_titles = [
+    "Mật khẩu an toàn", "Chuẩn hóa họ tên", "Tin nhắn bí mật", "Đảo ngược câu chữ", "Đếm từ trong bài văn",
+    "Biển số xe ngũ quý", "Mã vạch sản phẩm", "Tên miền trang web hợp lệ", "Ký tự may mắn", "Thư ngỏ đầu năm",
+    "Đếm nguyên âm và phụ âm", "Xâu đối xứng dài nhất", "Rút gọn tiêu đề bài báo", "Mã hóa Caesar cổ đại", "Kiểm tra địa chỉ email",
+    "Tìm kiếm từ khóa bài viết", "Nối các đoạn văn bản", "Xóa khoảng trắng thừa", "Mã bưu chính quốc tế", "Tách họ và tên đệm",
+    "Đếm số lần xuất hiện của chữ cái", "Viết hoa chữ cái đầu câu", "So sánh hai văn bản", "Thay thế từ nhạy cảm", "Mật thư Morse trên biển",
+    "Ghép vần thơ lục bát", "Đếm số ký tự đặc biệt", "Kiểm tra định dạng số điện thoại", "Cắt chuỗi theo dấu phẩy", "Tìm tiền tố chung dài nhất",
+    "Đảo ngược từng từ trong câu", "Mã hóa Base64 đơn giản", "Xóa nguyên âm trong từ", "Tìm từ dài nhất trong đoạn văn", "Kiểm tra xâu ký tự lặp",
+    "Dịch văn bản sang tiếng lóng", "Kiểm tra cú pháp biểu thức", "Phân tích chuỗi URL", "Đếm tần suất các từ", "Chèn dấu phân cách hàng nghìn",
+    "Chuyển đổi chữ hoa sang chữ thường", "Xâu con đối xứng", "Nén chuỗi ký tự liên tiếp", "Giải mã thông điệp người ngoài hành tinh", "Kiểm tra chuỗi chứa toàn số",
+    "Ghép hai chuỗi xen kẽ", "Loại bỏ ký tự trùng lặp", "Đếm số câu trong đoạn văn", "Tìm xâu con xuất hiện nhiều nhất", "Mã hóa hoán vị ký tự",
+    "Kiểm tra họ và tên hợp lệ", "Đếm số dấu câu trong bài thơ", "Chuyển đổi tên sang viết tắt", "Tìm từ xuất hiện đầu tiên", "Tách chuỗi theo dấu gạch ngang",
+    "Đếm số ký tự in hoa", "Kiểm tra xâu đảo ngược hoàn hảo", "Dịch chuyển ký tự theo bảng chữ cái", "Đếm số ký tự khoảng trắng", "Chuỗi nhị phân đối xứng",
+    "So khớp mẫu chuỗi đơn giản", "Chuyển văn bản thành mã Hex", "Định dạng chuỗi ngày tháng", "Kiểm tra mã ISBN cuốn sách", "Thay thế ký tự theo từ điển",
+    "Đếm số lượng nguyên âm đôi", "Ghép chuỗi theo thứ tự chữ cái", "Đếm số âm tiết trong từ", "Kiểm tra chuỗi kết thúc bằng hậu tố", "Rút trích đường dẫn tệp tin",
+    "Đổi kiểu gõ Telex sang Unicode", "Chuỗi ký tự xoay vòng", "Tìm xâu con ngắn nhất chứa đủ ký tự", "Kiểm tra định dạng mã căn cước", "Đếm số lần xuất hiện từ khóa",
+    "Xóa ký tự đặc biệt khỏi chuỗi", "Tạo mật khẩu ngẫu nhiên", "Kiểm tra tên tài khoản hợp lệ", "Định dạng tiền tệ từ chuỗi", "Phân tích chuỗi JSON đơn giản",
+    "Đếm số dòng trong đoạn văn", "Kiểm tra chuỗi chỉ chứa chữ cái", "Chèn chuỗi con vào vị trí k", "Loại bỏ thẻ HTML khỏi văn bản", "Tìm từ bắt đầu bằng chữ cái cho trước",
+    "Kiểm tra hai chuỗi là đảo chữ của nhau", "Xóa dấu tiếng Việt", "Đếm số từ có độ dài chẵn", "Chuyển đổi chuỗi thành số La Mã", "Ghép danh sách từ thành câu hoàn chỉnh",
+    "Kiểm tra chuỗi chứa ký tự số", "Tìm ký tự xuất hiện ít nhất", "Đảo ngược thứ tự các dòng", "Cắt tỉa khoảng trắng đầu cuối", "Tìm xâu con không lặp ký tự",
+    "Đếm số lượng từ khóa lập trình", "Kiểm tra định dạng thời gian HH:MM", "Xóa ký tự tại vị trí cho trước", "Tạo chuỗi ký tự lặp lại N lần", "Đánh giá độ mạnh mật khẩu"
+]
+
+fnc_titles = [
+    "Tháp Hà Nội huyền thoại", "Xếp quân Hậu bảo vệ vương triều", "Bước nhảy hiệp sĩ trên bàn cờ", "Phân chia tài sản thừa kế", "Mở khóa vali số",
+    "Cây gia phả hoàng gia", "Mê cung gương kính", "Trò chơi bốc sỏi dân gian", "Bàn cờ Sudoku kỳ ảo", "Tô màu bản đồ địa lý",
+    "Sinh chuỗi nhị phân may mắn", "Liệt kê các hoán vị học sinh", "Chia bánh kẹo công bằng", "Chuyến du hành của hiệp sĩ", "Xếp lịch thi đấu vòng tròn",
+    "Tìm đường thoát khỏi mê cung", "Bốc que diêm tính điểm", "Tổ hợp chọn đội tuyển", "Xếp hình khối lập phương", "Cắt bánh chưng ngày Tết",
+    "Thang máy thần tốc", "Bài toán đổi tiền xu cổ", "Đi tìm kho báu trong hang đá", "Cây nhị phân tìm kiếm", "Tháp bánh cưới nhiều tầng",
+    "Xếp quân mã tuần du", "Chia đều khối lượng hàng hóa", "Dãy ngoặc đúng hoàn hảo", "Ghép tranh ghép hình nghệ thuật", "Tô màu các vùng lãnh thổ",
+    "Đếm số cách bước lên cầu thang", "Mật mã két sắt ngân hàng", "Phân hoạch tập hợp số nguyên", "Tìm đường đi trong mê cung số", "Xếp các khối gỗ Rubik",
+    "Trò chơi tháp đĩa nhiều cột", "Đặt quân cờ không ăn nhau", "Chia đoàn thám hiểm thành các nhóm", "Phân loại đá quý trong hầm mỏ", "Sinh tập hợp con có tổng bằng K",
+    "Lập lịch trực tuần tra đêm", "Thử nghiệm tổ hợp gen", "Cây phân nhánh sự kiện", "Đếm số nhánh liên kết tối ưu", "Lắp ráp robot từ linh kiện",
+    "Di chuyển trên lưới tổ ong", "Ghép các mảnh vỡ gốm sứ", "Trò chơi giải câu đố chữ", "Chọn món trong thực đơn tiệc", "Xếp xe vào bãi đỗ thông minh",
+    "Chia tài nguyên máy chủ", "Thử màu sơn phòng tranh", "Duyệt cây thư mục máy tính", "Tìm chu trình trên bàn cờ", "Xếp bàn tiệc ngoại giao",
+    "Đếm số đường đi ngắn nhất", "Bài toán phân tích thành thừa số", "Hoán vị các chữ số may mắn", "Cắt thanh kim loại làm khung", "Lập kế hoạch du lịch xuyên Việt",
+    "Ghép nối ống dẫn nước", "Bài toán chia thỏi sô-cô-la", "Liệt kê hành trình giao hàng", "Phân chia phòng thi học sinh", "Lắp đặt trạm phát sóng",
+    "Sinh mã vạch bảo mật", "Chọn lộ trình leo núi an toàn", "Đếm số cách chia phần thưởng", "Bố trí gian hàng chợ quê", "Xếp hàng chụp ảnh kỷ yếu",
+    "Tính giá trị đa thức đa tầng", "Tìm cấu hình đèn giao thông", "Thử nghiệm hương vị trà sữa", "Ghép cặp đôi khiêu vũ", "Phân bổ công việc trong dự án",
+    "Tìm đường xuyên qua rừng rậm", "Xếp hành lý lên khoang máy bay", "Lựa chọn cổ phiếu danh mục", "Cân bằng phản ứng hóa học", "Chia đất canh tác gia đình",
+    "Xếp hoa vào giỏ quà Tết", "Liệt kê các tập con khác rỗng", "Di chuyển quân xe trên bàn cờ", "Tổ chức giải cờ tướng trường học", "Phân luồng dòng khách tham quan",
+    "Lập đội hình bay phản lực", "Xếp chồng chén đĩa nhà hàng", "Thử chìa khóa mở hòm cổ", "Chia phần bánh pizza cho nhóm bạn", "Lựa chọn tuyến cáp viễn thông",
+    "Tạo sơ đồ chỗ ngồi máy bay", "Ghép nối đường ray xe lửa", "Tìm đường thoát hiểm đám cháy", "Xếp lịch chiếu phim phòng vé", "Phân bổ học bổng các khoa",
+    "Chọn mẫu thiết kế thời trang", "Trò chơi rút gỗ khéo léo", "Lập trình cánh tay robot", "Xếp quân cờ Domino nối đuôi", "Tìm chuỗi phản ứng dây chuyền"
+]
+
+srt_titles = [
+    "Bảng xếp hạng marathon quốc tế", "Tìm kiếm vé tàu còn trống", "Tra cứu từ điển ngôn ngữ", "Phân loại bưu kiện giao hàng", "Lịch hẹn khám bệnh thông minh",
+    "Chọn quà tặng vừa túi tiền", "Vạch xuất phát cuộc đua F1", "Điểm chuẩn các ngành đại học", "Sắp xếp kệ sách thư viện", "Tìm kiếm đầu sách kinh điển",
+    "Bảng vàng thành tích học sinh", "Giá vé máy bay giờ chót", "Xếp hạng huy chương SEA Games", "Tìm vị trí lắp đặt cột đèn", "Phân loại kích cỡ hạt tiêu",
+    "Tìm kiếm phòng khách sạn trống", "Xếp hàng mua trà sữa trân châu", "Tra cứu số điện thoại khẩn cấp", "Xếp hạng bài hát bảng Billboard", "Tìm kiếm nhà trọ giá rẻ sinh viên",
+    "Sắp xếp danh bạ theo bảng chữ cái", "Điểm số các xạ thủ bắn súng", "Phân loại kích thước trái cây", "Tìm kiếm điểm số trong bảng điểm", "Sắp xếp lịch thi học kỳ",
+    "Bảng xếp hạng cờ vua FIDE", "Tìm kiếm file tài liệu cũ", "Xếp thứ tự ưu tiên khám bệnh", "Phân loại nhóm máu trong kho", "Tìm mức giá cổ phiếu thích hợp",
+    "Sắp xếp hành lý lên băng chuyền", "Tra cứu mã bưu chính các quận", "Bảng xếp hạng doanh thu rạp chiếu", "Tìm vị trí ghế ngồi rạp hát", "Phân chia khối lượng kim loại",
+    "Tìm độ tuổi thích hợp tuyển dụng", "Sắp xếp hồ sơ xin việc", "Tra cứu lịch trình xe buýt", "Xếp hạng các kỳ thủ cờ vây", "Tìm kiếm món ăn trong menu",
+    "Phân loại đơn hàng theo khu vực", "Sắp xếp mã sản phẩm kho hàng", "Tìm vị trí đỗ xe gần nhất", "Bảng xếp hạng năng suất cây trồng", "Tra cứu kết quả xổ số kiến thiết",
+    "Sắp xếp dãy số may mắn", "Tìm bạn cùng tiến điểm số gần nhau", "Phân loại hàng hóa theo trọng lượng", "Sắp xếp thứ tự các tiết mục ca nhạc", "Tra cứu từ vựng tiếng Anh",
+    "Xếp hạng vận động viên bơi lội", "Tìm kiếm quán ăn gần đây", "Phân loại khách hàng theo độ tuổi", "Sắp xếp các mốc thời gian lịch sử", "Tra cứu thông tin chuyến bay",
+    "Bảng xếp hạng game thủ chuyên nghiệp", "Tìm khoảng cách ngắn nhất giữa hai điểm", "Phân loại sản phẩm giảm giá", "Sắp xếp danh sách lớp học", "Tra cứu giá vàng miếng SJC",
+    "Xếp hạng các câu lạc bộ bóng đá", "Tìm ngưỡng chịu nhiệt của vật liệu", "Phân loại đá quý theo độ trong suốt", "Sắp xếp lịch phát sóng truyền hình", "Tra cứu tỷ giá ngoại tệ hôm nay",
+    "Bảng xếp hạng điểm rèn luyện", "Tìm mức tiêu thụ điện trung bình", "Phân loại mẫu đất nông nghiệp", "Sắp xếp thứ tự duyệt binh", "Tra cứu tuyến đường xe buýt nhanh",
+    "Xếp hạng các hãng hàng không", "Tìm kiếm sản phẩm bán chạy nhất", "Phân loại kích cỡ giày dép", "Sắp xếp các bản thảo cổ", "Tra cứu giờ tàu hỏa xuất phát",
+    "Bảng xếp hạng top streamer", "Tìm mức áp suất an toàn", "Phân loại gỗ theo độ cứng", "Sắp xếp tranh ảnh triển lãm", "Tra cứu địa điểm trạm sạc xe điện",
+    "Xếp hạng chỉ số chất lượng sống", "Tìm kiếm từ đồng nghĩa", "Phân loại cá theo kích cỡ", "Sắp xếp danh mục hồ sơ bệnh án", "Tra cứu điểm kiểm tra định kỳ",
+    "Bảng xếp hạng mức độ hạnh phúc", "Tìm kiếm mặt hàng còn tồn kho", "Phân loại bưu ảnh theo năm phát hành", "Sắp xếp thứ hạng các đội tuyển", "Tra cứu điểm dừng xe liên tỉnh",
+    "Xếp hạng các nhà hàng Michelin", "Tìm kiếm tài liệu nghiên cứu", "Phân loại độ mặn nguồn nước", "Sắp xếp thứ tự các chuyến bay hạ cánh", "Tra cứu lịch thủy triều lên xuống",
+    "Bảng xếp hạng chỉ số đổi mới sáng tạo", "Tìm kiếm kênh truyền hình yêu thích", "Phân loại tiền kim loại cổ", "Sắp xếp thẻ ngân hàng theo ngày hết hạn", "Tra cứu vận tốc gió cực đại"
+]
+
+mth_titles = [
+    "Số nguyên tố may mắn", "Ước số vàng của Kim tự tháp", "Bội số chung của thời gian", "Chiếc đồng hồ cát cổ đại", "Chìa khóa bảo mật RSA",
+    "Số Palindrome tài lộc", "Giải thưởng độc đắc vé số", "Hạt thóc trên bàn cờ truyền thuyết", "Dãy số Fibonacci bí ẩn", "Số hoàn hảo của Pythagoras",
+    "Bánh răng đồng hồ Thụy Sĩ", "Phân tích thừa số nguyên tố viên ngọc", "Cặp số thân thiết của nhà thông thái", "Chia phần bánh đa cho trẻ nhỏ", "Bước nhảy của kim đồng hồ",
+    "Hộp đựng bi ve may mắn", "Dãy số Catalan trong kiến trúc", "Ước chung lớn nhất của hai nông trại", "Đồng xu may mắn của ông ngoại", "Mật mã số học đền cổ Maya",
+    "Tam giác Pascal rực rỡ", "Số chính phương trên bức tường gạch", "Bội số thần kỳ của số 7", "Dãy số Lucas trong tự nhiên", "Đếm số ước số của ngày sinh",
+    "Phép lũy thừa nhanh ngọn lửa", "Đếm số ước nguyên tố khác nhau", "Nghịch đảo modulo chìa khóa số", "Số phong phú và số thiếu hụt", "Vòng tròn đồng dư của bánh xe",
+    "Định lý thặng dư Trung Hoa", "Số Smith trong hóa thạch", "Tổng các chữ số may mắn", "Số Armstrong trong thế giới số", "Đếm số cặp nguyên tố cùng nhau",
+    "Phép nhân Ấn Độ cổ đại", "Chu kỳ tuần hoàn phân số", "Phân số tối giản của thợ bạc", "Số Mersenne và bảo mật dữ liệu", "Lũy thừa nhị phân nhanh như chớp",
+    "Số vị kỷ trong toán học", "Định lý Fermat nhỏ và mật mã học", "Căn bậc hai xấp xỉ của Heron", "Đếm số cách chọn đội tuyển thi đấu", "Phân phối quà Tết theo tổ hợp",
+    "Xếp chỗ ngồi quanh bàn tròn", "Bậc của thừa số nguyên tố trong giai thừa", "Số Catalan và cách chia đa giác", "Tổng các ước số nguyên dương", "Đếm số số nguyên tố trong khoảng",
+    "Số bán nguyên tố của ổ khóa", "Đếm số cách chia kẹo Euler", "Sàng nguyên tố trên cánh đồng số", "Tính chất chia hết của dãy lũy thừa", "Dãy số Collatz kỳ bí",
+    "Số siêu nguyên tố của tương lai", "Số tự mãn trong hệ thập phân", "Chữ số tận cùng của phép lũy thừa", "Số đối xứng trong gương", "Tính tổng các số lẻ đầu tiên",
+    "Phân tích số nguyên thành tổng các bình phương", "Số cách bước qua các ô gạch", "Dãy số tự nhiên liên tiếp có tổng bằng S", "Tổ hợp chập K của N phần tử", "Tính số chữ số không ở cuối giai thừa",
+    "Kiểm tra số nguyên tố sinh đôi", "Số Harshad chia hết cho tổng chữ số", "Đếm số đường chéo của đa giác", "Bội số chung nhỏ nhất của đàn gia súc", "Tính giai thừa modulo một số nguyên tố",
+    "Dãy số Pell trong hình học", "Số tam giác đều xếp bằng bi", "Đếm số cách phân tích thành thừa số", "Số đảo ngược nguyên tố", "Tính tổng các chữ số của N giai thừa",
+    "Kiểm tra số chia hết cho 11", "Cặp số hứa hẹn trong mật mã", "Số Kaprekar kỳ diệu", "Tổng nghịch đảo các số nguyên", "Phép toán xor của các số nguyên",
+    "Đếm số ước chẵn của một số", "Tính số ước nguyên tố dạng 4k+1", "Số gần nguyên tố trong vũ trụ", "Tìm số nguyên tố thứ K", "Số Lychrel và nghịch đảo",
+    "Ước chung lớn nhất của dãy số", "Bội số nhỏ nhất chia hết cho từ 1 đến N", "Số vị trí số nguyên tố trong dãy Fibonacci", "Tính tổng các số chính phương nhỏ hơn N", "Đếm số hoán vị không có điểm cố định",
+    "Kiểm tra số nguyên tố Fermat", "Định lý Wilson trong kiểm tra nguyên tố", "Tính số phân hoạch của số nguyên N", "Căn nguyên thủy modulo P", "Tìm hai số khi biết tổng và tích",
+    "Số chữ số của lũy thừa A mũ B", "Đếm số chữ số khác nhau của số N", "Số may mắn Ulam", "Bậc số học của ma trận đồng dư", "Chuỗi số nguyên tố vô tận của Euclid"
+]
+
+dp_titles = [
+    "Balo thám hiểm rừng sâu", "Hái nấm trong rừng Amazon", "Bậc thang vô tận lên đỉnh núi", "Đổi tiền xu cổ ở phố cổ", "Chuyến bay giá rẻ nhất châu Á",
+    "Cắt thanh gỗ tối ưu của bác thợ", "Lịch thi đấu quần vợt Grand Slam", "Xếp chồng hộp quà giáng sinh", "Thợ lặn săn ngọc trai đáy biển", "Chiến lược đầu tư chứng khoán thông minh",
+    "Dãy con tăng dài nhất trong thị trường", "Xâu con chung dài nhất của chuỗi DNA", "Đường đi an toàn qua bãi mìn", "Thu hoạch quả ngọt trong vườn", "Bước nhảy của chú ếch qua lá sen",
+    "Xếp vali du lịch châu Âu", "Băng tải vận chuyển hàng hóa sân bay", "Mua sắm mùa giảm giá Black Friday", "Robot vượt chướng ngại vật", "Chia kẹo socola cho các bé",
+    "Thợ kim hoàn ghép vòng ngọc", "Nhặt vỏ sò bên bờ biển Nha Trang", "Xếp gạch xây tháp nghiêng", "Cắt dải ruy băng trang trí", "Thu gom năng lượng mặt trời",
+    "Hành trình người đưa thư thông thái", "Đào vàng trong hầm mỏ bỏ hoang", "Chiếc cầu phao vượt sông mùa lũ", "Trồng hoa trên dải phân cách", "Đặt biển quảng cáo trên cao tốc",
+    "Đánh bắt cá ngừ đại dương", "Mua vé tàu hỏa tiết kiệm nhất", "Xếp sách lên giá sách gỗ", "Leo núi Fansipan chọn đường đi", "Thu hoạch mật ong rừng U Minh",
+    "Đổi voucher khuyến mãi Shopee", "Lựa chọn thực đơn đám cưới", "Phân bổ ngân sách quảng cáo số", "Chiết khấu bậc thang siêu thị", "Chuyến săn bão của nhà khí tượng",
+    "Thợ may cắt vải may áo dài", "Thảm hoa đăng trên sông Hương", "Chọn tuyến cáp quang tối ưu", "Vượt ghềnh thác sông Đà", "Phân chia ca trực bác sĩ cấp cứu",
+    "Lập lịch phát sóng chương trình TV", "Bắn cung tính điểm hồng tâm", "Mua bản quyền phim chiếu rạp", "Chọn danh mục đầu tư khởi nghiệp", "Đổi điểm tích lũy đổi quà",
+    "Xây đập ngăn mặn đồng bằng", "Thu gom rác thải bãi biển", "Chạy tiếp sức chọn vận động viên", "Đặt trạm phát WiFi phủ sóng", "Chọn cây giống trồng rừng phòng hộ",
+    "Lập kế hoạch vận chuyển hàng tết", "Săn mã giảm giá vé máy bay", "Xếp thùng hàng vào container", "Chi phí sơn các tòa nhà phố cổ", "Khôi phục bức tranh cổ phục chế",
+    "Du thuyền khám phá vịnh Hạ Long", "Đặt camera giám sát giao thông", "Chia phần bánh kem sinh nhật", "Thợ gốm chọn đất sét nung", "Lựa chọn hợp đồng bảo hiểm",
+    "Vận hành hồ chứa thủy điện", "Nối mạng lưới ống dẫn nước sinh hoạt", "Xếp hàng mua trà sữa hot trend", "Bắt nhịp sóng phát thanh tầm xa", "Xây tường chắn sóng biển Sầm Sơn",
+    "Chọn chuyến xe buýt liên tỉnh", "Rút tiền tiết kiệm linh hoạt", "Thám hiểm hang Sơn Đoòng", "Phân chia khoáng sản khai thác", "Chọn mẫu xe hơi tiết kiệm xăng",
+    "Xếp các cuộn vải trong xưởng dệt", "Bán hoa tươi ngày lễ tình nhân", "Lựa chọn gói cước viễn thông", "Chinh phục đỉnh đèo Mã Pí Lèng", "Thu hoạch chè Shan Tuyết cổ thụ",
+    "Mua cổ phiếu sinh lời cao nhất", "Đặt trạm sạc điện thoại công cộng", "Chọn ca sĩ biểu diễn đại nhạc hội", "Quy hoạch công viên cây xanh", "Thợ lặn tìm cổ vật tàu đắm",
+    "Chia tiền thưởng cuối năm", "Xếp lịch hội thảo khoa học", "Lắp đặt pin mặt trời trang trại", "Lập trình đường bay của Drone", "Lựa chọn món ăn buffet tối ưu",
+    "Xây dựng tuyến đường sắt đô thị", "Ghép các mảnh kính vỡ nghệ thuật", "Thu gom nước mưa mùa khô", "Xếp dỡ container cảng Cát Lái", "Chọn căn hộ chung cư ưng ý",
+    "Lộ trình giao hàng của shipper", "Thợ mộc xẻ gỗ đóng bàn ghế", "Lập kế hoạch tài chính cá nhân", "Chọn quà lưu niệm chuyến du lịch", "Đêm hội pháo hoa quốc tế Đà Nẵng"
+]
+
+gr_titles = [
+    "Mạng lưới cáp quang xuyên biển", "Tuyến xe buýt đô thị thông minh", "Cầu nối các hòn đảo Phú Quốc", "Mạng lưới đường ống cấp nước sạch", "Chuyến bay quốc tế nối chuyến",
+    "Mạng xã hội bạn bè VCoder", "Đèn giao thông thông minh ngã tư", "Trạm sạc xe điện xuyên Việt", "Bản đồ tàu điện ngầm Metro", "Lưới điện quốc gia cao thế 500kV",
+    "Bản đồ du lịch phố cổ Hội An", "Mạng lưới giao hàng tiết kiệm", "Cứu hộ vùng ngập lụt miền Trung", "Đường hầm xuyên đèo Hải Vân", "Mạng lưới đường ống dẫn khí đốt",
+    "Tuyến phà vượt sông Tiền", "Kết nối vệ tinh viễn thông Starlink", "Bản đồ các điểm tham quan Đà Lạt", "Mạng lưới trạm khí tượng thủy văn", "Tuyến đường sắt Bắc Nam di sản",
+    "Hệ thống đê điều đồng bằng Bắc Bộ", "Kết nối các trạm quan sát thiên văn", "Đường bay vận chuyển hàng hóa", "Mạng lưới máy chủ điện toán đám mây", "Mạng lưới đại lý phân phối sữa",
+    "Tuyến xe cứu hỏa tiếp cận đám cháy", "Bản đồ cáp treo Bà Nà Hills", "Kết nối các phòng thí nghiệm quốc gia", "Hệ thống camera giám sát cao tốc", "Tuyến đường mòn leo núi Fansipan",
+    "Mạng lưới cấp điện gió ngoài khơi", "Bản đồ mạng phân phối điện nước", "Kết nối các hải đăng Trường Sa", "Mạng lưới điểm hiến máu tình nguyện", "Tuyến đường vận tải biển quốc tế",
+    "Hệ thống dẫn dòng thủy điện Hòa Bình", "Mạng lưới trạm kiểm lâm Vườn Cúc Phương", "Bản đồ tuyến xe điện du lịch", "Tuyến cáp treo Hòn Thơm", "Kết nối các trạm radar phòng không",
+    "Mạng lưới cấp cứu y tế 115", "Tuyến xe đưa đón công nhân viên", "Bản đồ các giếng khoan dầu khí", "Mạng lưới cây ATM ngân hàng", "Kết nối trung tâm dữ liệu liên vùng",
+    "Hệ thống kênh rạch miền Tây Nam Bộ", "Tuyến đường hoa xuân Nguyễn Huệ", "Mạng lưới trạm quan trắc ô nhiễm", "Bản đồ phân phối vắc-xin y tế", "Kết nối các trường đại học thành viên",
+    "Tuyến đường giao thương biên mậu", "Mạng lưới bưu cục chuyển phát nhanh", "Hệ thống cống thoát nước ngập úng", "Bản đồ mạng đường thủy nội địa", "Kết nối các trạm phát sóng 5G",
+    "Tuyến xe chở khách tham quan di tích", "Mạng lưới phòng chống cháy rừng", "Bản đồ đường hầm kỹ thuật ngầm", "Kết nối các nông trại hữu cơ", "Tuyến xe gom rác thông minh",
+    "Mạng lưới hồ chứa điều tiết nước", "Bản đồ các tuyến cáp viễn thông ngầm", "Kết nối các trạm sạc tàu thuyền điện", "Tuyến đường tiếp tế đảo xa", "Mạng lưới cung ứng thuốc thiết yếu",
+    "Bản đồ di cư của đàn chim nước", "Kết nối các kho lạnh bảo quản nông sản", "Tuyến xe cứu hộ giao thông 24/7", "Mạng lưới trạm bơm tưới tiêu lúa", "Bản đồ đường xe đạp công cộng",
+    "Kết nối các điểm di tích cố đô Huế", "Tuyến hành lang vận tải Đông Tây", "Mạng lưới các trạm trung chuyển hàng", "Bản đồ các rạn san hô Côn Đảo", "Kết nối các khu công nghệ cao",
+    "Tuyến đường vận chuyển hoa tươi Đà Lạt", "Mạng lưới cảnh báo sớm sóng thần", "Bản đồ luồng hàng hải tàu biển", "Kết nối các trung tâm kiểm soát không lưu", "Tuyến xe buýt đường sông Sài Gòn",
+    "Mạng lưới quan trắc sạt lở đất", "Bản đồ vùng phủ sóng truyền hình số", "Kết nối các trạm quan trắc địa chấn", "Tuyến đường vận chuyển gỗ rừng trồng", "Mạng lưới trạm dừng nghỉ cao tốc",
+    "Bản đồ phân bổ nguồn lợi thủy sản", "Kết nối các kho dự trữ lương thực", "Tuyến xe buýt nhanh BRT", "Mạng lưới quan sát chim hoang dã", "Bản đồ hệ thống cáp điện ngầm đô thị",
+    "Kết nối các trạm cứu hộ động vật biển", "Tuyến đường tuần tra biên giới", "Mạng lưới phân phối nước khoáng thiên nhiên", "Bản đồ các điểm sạt lở mùa mưa", "Kết nối các viện bảo tàng quốc gia",
+    "Tuyến đường di chuyển của đàn voi rừng", "Mạng lưới cung cấp thực phẩm sạch", "Bản đồ mạng lưới cấp thoát khí nén", "Kết nối các trung tâm điều độ điện lưới", "Tuyến xe du lịch vòng quanh bán đảo Sơn Trà"
+]
+
+ds_titles = [
+    "Kiểm tra dấu ngoặc hợp lệ trong mã nguồn", "Hàng đợi khám bệnh ưu tiên bệnh viện", "Ngăn xếp đĩa tiệc nhà hàng tiệc cưới", "Quản lý kho hàng tự động thông minh", "Băng chuyền phân loại hành lý sân bay",
+    "Tháp truyền hình phát sóng đa kênh", "Hệ thống giám sát giao thông thông minh", "Bộ nhớ đệm tốc độ cao cho vi xử lý", "Quản lý dân số khu phố trực tuyến", "Bảng xếp hạng điểm số thời gian thực",
+    "Hàng đợi mua vé hòa nhạc trực tuyến", "Ngăn xếp khay thức ăn nhà ăn sinh viên", "Cập nhật giá vàng miếng liên tục", "Quản lý danh bạ khách hàng VIP", "Băng tải đóng gói hàng hóa siêu thị",
+    "Hàng đợi in tài liệu văn phòng", "Bộ lọc từ khóa tìm kiếm nhanh", "Thước đo khoảng cách cây cảnh", "Quản lý danh sách nhạc chờ phát", "Hệ thống cảnh báo nhiệt độ máy chủ",
+    "Hàng đợi xe qua trạm thu phí không dừng", "Ngăn xếp tài liệu chờ duyệt chữ ký", "Bảng điện tử hiển thị tỷ giá hối đoái", "Quản lý bộ sưu tập tem quý hiếm", "Băng chuyền chuyển gạch trong nhà máy",
+    "Hàng đợi cuộc gọi tổng đài chăm sóc khách hàng", "Bộ đệm dữ liệu video trực tuyến", "Thống kê lượng truy cập website theo phút", "Quản lý danh sách bạn thân trên mạng", "Hệ thống theo dõi nhịp tim bệnh nhân",
+    "Hàng đợi giao dịch chuyển khoản ngân hàng", "Ngăn xếp các bước hoàn tác văn bản (Undo)", "Cập nhật bảng giá chứng khoán điện tử", "Quản lý kho sách thư viện số", "Băng chuyền bốc dỡ hàng container",
+    "Hàng đợi khách đặt bàn ăn tối", "Bộ lưu trữ tạm tin nhắn chưa đọc", "Thống kê lượng mưa các trạm đo", "Quản lý vé tham quan viện bảo tàng", "Hệ thống phát hiện gian lận thi cử",
+    "Hàng đợi tàu vào âu thuyền", "Ngăn xếp các cuộc gọi nhỡ", "Bảng hiển thị kết quả bầu cử trực tiếp", "Quản lý hạn ngạch mượn sách học sinh", "Băng chuyền phân loại cam theo kích cỡ",
+    "Hàng đợi gửi xe tại trung tâm thương mại", "Bộ nhớ đệm trình duyệt web", "Thống kê tốc độ phương tiện trên cao tốc", "Quản lý danh sách bài hát yêu thích", "Hệ thống giám sát áp suất lốp xe tải",
+    "Hàng đợi cấp phát thẻ căn cước", "Ngăn xếp hồ sơ vay vốn ngân hàng", "Cập nhật chỉ số ô nhiễm không khí AQI", "Quản lý danh mục linh kiện điện tử", "Băng chuyền kiểm tra an ninh túi xách",
+    "Hàng đợi thanh toán quầy tự động", "Bộ lọc bình luận tiêu cực mạng xã hội", "Thống kê số lượng tin nhắn trong ngày", "Quản lý tài khoản người dùng diễn đàn", "Hệ thống đo mực nước triều cường",
+    "Hàng đợi xét nghiệm y tế dã chiến", "Ngăn xếp sách trả lại chưa xếp giá", "Bảng điện tử thông báo lịch bay", "Quản lý mã giảm giá còn hiệu lực", "Băng chuyền thức ăn nhà hàng sushi",
+    "Hàng đợi tàu hỏa vào ga trung tâm", "Bộ đệm âm thanh tai nghe không dây", "Thống kê số bước chân người dùng", "Quản lý hợp đồng bảo hiểm xe máy", "Hệ thống kiểm định trọng tải cầu đường",
+    "Hàng đợi cấp phát phù hiệu xe buýt", "Ngăn xếp gạch men lát sàn", "Bảng hiển thị thông tin thời tiết biển", "Quản lý số lượng phòng khách sạn trống", "Băng chuyền đóng chai nước tinh khiết",
+    "Hàng đợi xét duyệt hồ sơ học bổng", "Bộ đệm lệnh điều khiển cánh tay robot", "Thống kê doanh thu bán lẻ từng giờ", "Quản lý danh sách thiết bị thông minh", "Hệ thống giám sát độ rung động tòa nhà",
+    "Hàng đợi kiểm tra hộ chiếu hải quan", "Ngăn xếp thùng hàng trong kho lạnh", "Bảng điện tử báo giá nông sản chợ đầu mối", "Quản lý mã vạch kiện hàng xuất khẩu", "Băng chuyền phân loại cá đông lạnh",
+    "Hàng đợi cấp bằng lái xe cơ giới", "Bộ lọc thư rác hộp thư điện tử", "Thống kê mức tiêu hao pin thiết bị IoT", "Quản lý danh sách đại biểu dự hội nghị", "Hệ thống cảnh báo ngập lụt đô thị",
+    "Hàng đợi đổi quà tặng tri ân", "Ngăn xếp đĩa nhạc vinyl cổ điển", "Bảng điện tử hiển thị giá xăng dầu", "Quản lý danh bạ liên lạc nội bộ", "Băng chuyền kiểm tra chất lượng sữa",
+    "Hàng đợi đăng ký môn học trực tuyến", "Bộ đệm gói tin mạng router", "Thống kê lượng khách qua cửa xoay", "Quản lý danh sách cổ đông công ty", "Hệ thống giám sát chuỗi cung ứng lạnh"
+]
+
+all_domains = {
+    "cb": cb_titles, "dk": dk_titles, "vl": vl_titles, "vt": vt_titles,
+    "mt": mt_titles, "str": str_titles, "fnc": fnc_titles, "srt": srt_titles,
+    "mth": mth_titles, "dp": dp_titles, "gr": gr_titles, "ds": ds_titles
+}
+
+# Validation
+total = 0
+all_names = set()
+forbidden_words = ["Quy hoạch động", "Đồ thị", "Hàm đệ quy", "Mảng một chiều", "Mảng hai chiều", "Cấu trúc dữ liệu", "Sắp xếp & Tìm kiếm", "Số học & Toán rời rạc"]
+
+for prefix, titles in all_domains.items():
+    print(f"Domain {prefix}: {len(titles)} titles")
+    assert len(titles) == 100, f"Domain {prefix} has {len(titles)} != 100"
+    for idx, t in enumerate(titles, start=1):
+        assert len(t) <= 100, f"Title too long: {t}"
+        for fw in forbidden_words:
+            assert fw.lower() not in t.lower(), f"Forbidden word '{fw}' found in '{t}'"
+        assert t not in all_names, f"Duplicate title across domains: '{t}'"
+        all_names.add(t)
+    total += len(titles)
+
+print(f"ALL CHECKS PASSED! Total unique, realistic CP titles: {total}")
+
+# Now generate scripts/problem_titles_bank.py
+output_path = "/Users/ryanx/workspace/vcoderlog-workspace/vcoderlog-judge/scripts/problem_titles_bank.py"
+with open(output_path, "w", encoding="utf-8") as f:
+    f.write("# -*- coding: utf-8 -*-\n")
+    f.write('"""\nProblem Titles and Story Bank for VCoder Arena.\n')
+    f.write('Contains 1,200 unique, creative, contextual Vietnamese competitive programming titles and stories.\n')
+    f.write('Modeled after LuyenCode.net problem naming conventions.\n"""\n\n')
+    f.write("TITLES_BY_DOMAIN = " + json.dumps(all_domains, ensure_ascii=False, indent=4) + "\n\n")
+    f.write('''
+def get_title(prefix, index):
+    """Returns a unique, realistic Vietnamese CP title for prefix and 1-based index (1..100)."""
+    titles = TITLES_BY_DOMAIN.get(prefix, [])
+    if 1 <= index <= len(titles):
+        return titles[index - 1]
+    return f"{prefix.upper()} Problem {index}"
+''')
+
+print(f"Wrote bank to {output_path}")
