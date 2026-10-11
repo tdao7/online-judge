@@ -271,6 +271,8 @@ urlpatterns = [
         path('participations', api.api_v2.APIContestParticipationList.as_view()),
         path('languages', api.api_v2.APILanguageList.as_view()),
         path('judges', api.api_v2.APIJudgeList.as_view()),
+        path('vcoderlog/candidate/register', api.assessment_api.register_candidate, name='vcoderlog_candidate_register'),
+        path('vcoderlog/candidate/<str:username>/results', api.assessment_api.get_candidate_results, name='vcoderlog_candidate_results'),
     ])),
 
     path('blog/', paged_list_view(blog.PostList, 'blog_post_list')),
